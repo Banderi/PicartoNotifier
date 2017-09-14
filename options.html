@@ -1,0 +1,49 @@
+<html>
+<head>
+	<title>Picarto Notifier Options</title>
+	<script src="options.js"></script>
+	<style type="text/css">
+		body {
+			-webkit-transition: all ease .3s;
+			-moz-transition: all ease .3s;
+			transition: all ease .3s;
+		}
+	</style>
+</head>
+<body>
+Update interval:
+<select id="updateTime">
+	<option value="5000">5 seconds</option>
+	<option value="10000">10 seconds</option>
+	<option value="30000">30 seconds</option>
+	<option value="60000">1 minute</option>
+	<option value="300000">5 minutes</option>
+	<option value="600000">10 minutes</option>
+	<option value="900000">15 minutes</option>
+	<option value="1800000">30 minutes</option>
+	<option value="2700000">45 minutes</option>
+	<option value="3600000">1 hour</option>
+</select>
+<br>
+<br>
+<input type="checkbox" id="picartobar">Disable Picarto's native notifications
+<br>
+<input type="checkbox" id="notifications">Use desktop notifications (alert when people start streaming)
+<br>
+<input type="checkbox" id="alert">Play a sound along with desktop notifications
+<br>
+<input type="checkbox" id="streamer">Show advanced options for streamers (keep disabled if you're not using them!)
+<br>
+<br>
+
+<button id="save">Save</button>
+<span id="status"></span>
+<br>
+<br>
+<button id="purge">Purge settings</button>
+<span id="purgestatus"></span>
+<br>
+<i>(when cache/storage gets bugged and extension stops working, this is to avoid uninstalling and reinstalling)</i>
+
+</body>
+</html>
