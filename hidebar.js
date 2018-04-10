@@ -1,62 +1,28 @@
-if (chrome) {
-	storage = chrome.storage;
-	tabs = chrome.tabs;
-	notifications = chrome.notifications;
-	browser = chrome;
-}
+
 function isDevMode() {
-    return !('update_url' in browser.runtime.getManifest());
+    return !('update_url' in chrome.runtime.getManifest());
 }
 
-// css injector
-function css(selector, property, value) {
-    for (var i=0; i<document.styleSheets.length;i++) {
-        try { document.styleSheets[i].insertRule(selector+ ' {'+property+':'+value+'}', document.styleSheets[i].cssRules.length);
-        } catch(err) {try { document.styleSheets[i].addRule(selector, property+':'+value);} catch(err) {}} // IE
-    }
-}
 function injectCSS(style) {
-	var css = document.createElement('style');
-	css.type = "text/css";
+	let css = document.createElement('style');
 	css.textContent = style;
-	(document.head||document.documentElement).appendChild(css);
-	$("head").append(css);
-	css.remove();
-}
-
-// script injection function - NOTE: this can be used ONLY for disabling inline scripts
-function injectScript(func) {
-	var actualCode = '(' + func + ')();'
-	var script = document.createElement('script');
-	script.textContent = actualCode;
-	(document.head||document.documentElement).appendChild(script);
-	$("head").append(script);
-	script.remove();
+	document.head.appendChild(css);
 }
 
 // get setting from storage
-var picartobar = "true";
-injectCSS(".notificationMenu { visibility: hidden; }");
-css(".notificationMenu", "visibility", "hidden");
-chrome.storage.local.get("SETTINGS", function(items) {
-	picartobar = items["SETTINGS"]["picartobar"];
-	if (isDevMode()) {
-		console.log("picartobar: " + picartobar);
-	}
-	
-	// hide Picarto official notification bar via inline script injection (i.e. redefine "initNotifications(...)")
-	if (picartobar == "true")
-	{
-		if (isDevMode()) {
-			console.log("Hiding official Picarto bar");
+chrome.storage.local.get("SETTINGS", (item) => {
+	// hide Picarto official notification bar via css injection
+	// if picartobar is undefined, default to false
+	// TODO requires reload of page if setting changed
+	let picartobar = item["SETTINGS"]["picartobar"];	
+	if (picartobar){
+		if(isDevMode()){
+			console.log("Hiding official Picarto bar")
 		}
-		injectScript(function() {
-			initNotifications = function() {
-				//
-			}
-		});
-		css(".notificationMenu", "visibility", "hidden");
-	} else {
-		css(".notificationMenu", "visibility", "visible");
+		injectCSS(".notificationMenu{display: none !important;}");
 	}
 });
+
+
+
+
