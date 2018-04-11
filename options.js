@@ -1,164 +1,108 @@
-if (chrome) {
-	extension = chrome.extension;
-	storage = chrome.storage;
-	browser = chrome;
+/*
+javascript for options page. settings defaults are actually stored in global.js
+this just handles the options.html interface with the local storage
+*/
+let messageTimer = 3000
+
+let defaults = {
+	"updateTime":300000,
+	"picartobar":true,
+	"notifications":true,
+	"alert":false,
+	"streamer":false
+}
+
+let elems = {};
+
+let saveStatusElem = null;
+
+// sets a temporary text content message for the specified elem
+function set_message (elem, text) {
+	elem.textContent = text
+	setTimeout(() => {elem.textContent = ""}, messageTimer)
+}
+
+// sends update to browser runtime for this extension
+// edits the data packet with 'message' so you may need to make a copy before
+// calling this
+function send_update (data) {
+	data["message"] = "settingChanged"
+	chrome.runtime.sendMessage(data);
+}
+
+// returns true if no errors on accessing storage
+// otherwise returns false
+// also sets temporary status message
+function test_no_storage_err(statusElem, successMsg){
+	let err = chrome.runtime.lastError
+	if(err){
+		set_message(statusElem, err)
+		return false;
+	}
+	set_message(statusElem, successMsg)
+	return true;
+}
+
+// sets html elements based on data input
+function set_elements(data){
+	for(let a in data){
+		if(a in Object.keys(elems)){
+			let elem = elems[a]
+			if(elem.type === "checkbox"){
+				elem.checked = data[a]
+			}else{
+				elem.value = data[a]
+			}
+		}
+	}
 }
 
 // save settings to local storage
 function save_options() {
-	var select;
-	var settings = {};
-	
-	select = document.getElementById("updateTime");
-	var updateTime = select.children[select.selectedIndex].value;
-	
-	select = document.getElementById("picartobar");
-	var picartobar = select.checked.toString();
-	
-	select = document.getElementById("notifications");
-	var notifications = select.checked.toString();
-	
-	select = document.getElementById("alert");
-	var alert = select.checked.toString();
-	
-	select = document.getElementById("streamer");
-	var streamer = select.checked.toString();
-	
-	
-	storage.local.get("SETTINGS", function(items) {
-		if (items["SETTINGS"]) {
-			settings = items["SETTINGS"];
-		} else if (localStorage["SETTINGS"]) {
-			settings = JSON.parse(localStorage["SETTINGS"]); // get backup data from localStorage
+	let settings = {};
+	for(let a in elems){
+		let elem = elems[a]
+		if(elem.type === "checkbox"){
+			settings[a] = elem.checked
+		}else{
+			settings[a] = elem.value
 		}
-		settings["update"] = updateTime;
-		settings["picartobar"] = picartobar;
-		settings["notifications"] = notifications;
-		settings["alert"] = alert;
-		settings["streamer"] = streamer;
-		browser.storage.local.set({"SETTINGS" : settings}, function() {
-			localStorage["SETTINGS"] = JSON.stringify(settings); // save backup data in localStorage
-			var status = document.getElementById("status");
-			status.textContent = "Options Saved.";
-			setTimeout(function() {
-				status.textContent = "";
-			}, 750);
-			browser.runtime.sendMessage( {message: "settingChanged", update: updateTime, notifications: notifications, alert: alert, streamer: streamer} );
-		});
-	});
+	}
+	chrome.storage.local.set({"SETTINGS":settings}, () => {
+		if(test_no_storage_err(saveStatusElem, "Options saved.")){
+			let data = {}
+			for(a in settings){data[a] = settings[a];}
+			send_update(data)
+		}
+	})
 }
 
 function purgeoptions() {
-	localStorage.clear();
-	
-	browser.storage.local.clear(function() {
-		var status = document.getElementById("purgestatus");
-		var error = browser.runtime.lastError;		
-		if (error) {
-			status.textContent = error;
+	chrome.storage.local.clear(() => {
+		if(test_no_storage_err(saveStatusElem, "Settings storage cleared!")){
+			set_elements(defaults)
+
+			let data = {}
+			for(a in defaults){data[a] = defaults[a];}
+			send_update(data)
 		}
-		else {
-			status.textContent = "Settings storage cleared!";
-			
-			var select = document.getElementById("updateTime");
-			for (var i = 0; i < select.children.length; i++) {
-				var child = select.children[i];
-				if (child.value == "300000") {
-					child.selected = "true";
-					break;
-				}
-			}
-			
-			select = document.getElementById("picartobar");
-			select.checked = true;
-			
-			select = document.getElementById("notifications");
-			select.checked = true;
-			select.onchange = refresh;
-			
-			select = document.getElementById("alert");
-			select.checked = false;
-			select.disabled = false;
-			
-			select = document.getElementById("streamer");
-			select.checked = false;
-			
-		}
-		setTimeout(function() {
-			status.textContent = "";
-		}, 750);
-		browser.runtime.sendMessage( {message: "settingChanged", update: "300000", notifications: "true", alert: "false", streamer: "false"} );
-	});
+	})
 }
 
 // update text and buttons
-function page_load() {
-	var save = document.getElementById("save");
-	save.onclick = save_options;
-	purge.onclick = purgeoptions;
+window.onload = ()=>{
+	saveStatusElem = document.getElementById("status")
+
+	for (let a in defaults){
+		elems[a] = document.getElementById(a);
+	}
 	
-	// fetch saved settings or generate default ones
-	var settings = {};				// g
-	var updateTime = "300000";		// s
-	var notifications = "true";		// s
-	var alert = "false";			// s
-	var streamer = "false";			// s
-	var picartobar = "true";		// s
+	document.getElementById("save").addEventListener('click', save_options)
+	document.getElementById("purge").addEventListener('click', purgeoptions)
 
-	storage.local.get("SETTINGS", function(items) {
-		if (items["SETTINGS"]) {
-			settings = items["SETTINGS"];
-		} else if (localStorage["SETTINGS"]) {
-			settings = JSON.parse(localStorage["SETTINGS"]); // get backup data from localStorage
-		}
-		
-		if (settings) {
-			if (settings["update"]) {
-				updateTime = settings["update"];
-			}
-			if (settings["notifications"]) {
-				notifications = settings["notifications"];
-			}
-			if (settings["alert"]) {
-				alert = settings["alert"];
-			}
-			if (settings["streamer"]) {
-				streamer = settings["streamer"];
-			}
-			if (settings["picartobar"]) {
-				picartobar = settings["picartobar"];
-			}
-		}
-		
-		var select = document.getElementById("updateTime");
-		for (var i = 0; i < select.children.length; i++) {
-			var child = select.children[i];
-			if (child.value == updateTime) {
-				child.selected = "true";
-				break;
-			}
-		}
-		
-		select = document.getElementById("picartobar");
-		select.checked = (picartobar == "true");
-		
-		select = document.getElementById("notifications");
-		select.checked = (notifications == "true");
-		select.onchange = refresh;
-		
-		select = document.getElementById("alert");
-		select.checked = (alert == "true");
-		select.disabled = !(notifications == "true");
-		
-		select = document.getElementById("streamer");
-		select.checked = (streamer == "true");
-	});
+	chrome.storage.local.get(defaults, (data)=>{
+		set_elements(data)
+	})
 }
 
-// refresh some content after linked settings changed
-function refresh() {
-	select = document.getElementById("alert");
-	select.disabled = !document.getElementById("notifications").checked;
-}
 
-window.onload = page_load;
