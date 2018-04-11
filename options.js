@@ -15,9 +15,10 @@ let defaults = {
 let elems = {};
 
 let saveStatusElem = null;
+let purgeStatusElem = null;
 
 // sets a temporary text content message for the specified elem
-function set_message (elem, text) {
+function setMessage (elem, text) {
 	elem.textContent = text
 	setTimeout(() => {elem.textContent = ""}, messageTimer)
 }
@@ -25,7 +26,7 @@ function set_message (elem, text) {
 // sends update to browser runtime for this extension
 // edits the data packet with 'message' so you may need to make a copy before
 // calling this
-function send_update (data) {
+function sendUpdate (data) {
 	data["message"] = "settingChanged"
 	chrome.runtime.sendMessage(data);
 }
@@ -33,18 +34,18 @@ function send_update (data) {
 // returns true if no errors on accessing storage
 // otherwise returns false
 // also sets temporary status message
-function test_no_storage_err(statusElem, successMsg){
+function testNoStorageErrors(statusElem, successMsg){
 	let err = chrome.runtime.lastError
 	if(err){
-		set_message(statusElem, err)
+		setMessage(statusElem, err)
 		return false;
 	}
-	set_message(statusElem, successMsg)
+	setMessage(statusElem, successMsg)
 	return true;
 }
 
 // sets html elements based on data input
-function set_elements(data){
+function setElements(data){
 	for(let a in data){
 		if(a in Object.keys(elems)){
 			let elem = elems[a]
@@ -58,7 +59,7 @@ function set_elements(data){
 }
 
 // save settings to local storage
-function save_options() {
+function saveOptions() {
 	let settings = {};
 	for(let a in elems){
 		let elem = elems[a]
@@ -69,22 +70,22 @@ function save_options() {
 		}
 	}
 	chrome.storage.local.set({"SETTINGS":settings}, () => {
-		if(test_no_storage_err(saveStatusElem, "Options saved.")){
+		if(testNoStorageErrors(saveStatusElem, "Options saved.")){
 			let data = {}
 			for(a in settings){data[a] = settings[a];}
-			send_update(data)
+			sendUpdate(data)
 		}
 	})
 }
 
-function purgeoptions() {
+function purgeOptions() {
 	chrome.storage.local.clear(() => {
-		if(test_no_storage_err(saveStatusElem, "Settings storage cleared!")){
-			set_elements(defaults)
+		if(testNoStorageErrors(saveStatusElem, "Settings storage cleared!")){
+			setElements(defaults)
 
 			let data = {}
 			for(a in defaults){data[a] = defaults[a];}
-			send_update(data)
+			sendUpdate(data)
 		}
 	})
 }
@@ -92,16 +93,17 @@ function purgeoptions() {
 // update text and buttons
 window.onload = ()=>{
 	saveStatusElem = document.getElementById("status")
+	purgeStatusElem = document.getElementById("purgestatus")
 
 	for (let a in defaults){
 		elems[a] = document.getElementById(a);
 	}
-	
-	document.getElementById("save").addEventListener('click', save_options)
-	document.getElementById("purge").addEventListener('click', purgeoptions)
+
+	document.getElementById("save").addEventListener('click', saveOptions)
+	document.getElementById("purge").addEventListener('click', purgeOptions)
 
 	chrome.storage.local.get(defaults, (data)=>{
-		set_elements(data)
+		setElements(data)
 	})
 }
 
