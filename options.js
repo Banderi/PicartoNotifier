@@ -5,7 +5,7 @@ this just handles the options.html interface with the local storage
 let messageTimer = 3000
 
 let defaults = {
-	"updateTime":300000,
+	"update":300000,
 	"picartobar":true,
 	"notifications":true,
 	"alert":false,
@@ -24,10 +24,11 @@ function setMessage (elem, text) {
 }
 
 // sends update to browser runtime for this extension
-// edits the data packet with 'message' so you may need to make a copy before
-// calling this
 function sendUpdate (data) {
-	data["message"] = "settingChanged"
+	let msg = {"message":"settingChanged"}
+	for(let a in data){
+		msg[a] = data
+	}
 	chrome.runtime.sendMessage(data);
 }
 
@@ -47,7 +48,7 @@ function testNoStorageErrors(statusElem, successMsg){
 // sets html elements based on data input
 function setElements(data){
 	for(let a in data){
-		if(a in Object.keys(elems)){
+		if(a in elems){
 			let elem = elems[a]
 			if(elem.type === "checkbox"){
 				elem.checked = data[a]
@@ -71,21 +72,16 @@ function saveOptions() {
 	}
 	chrome.storage.local.set({"SETTINGS":settings}, () => {
 		if(testNoStorageErrors(saveStatusElem, "Options saved.")){
-			let data = {}
-			for(a in settings){data[a] = settings[a];}
-			sendUpdate(data)
+			sendUpdate(settings)
 		}
 	})
 }
 
 function purgeOptions() {
 	chrome.storage.local.clear(() => {
-		if(testNoStorageErrors(saveStatusElem, "Settings storage cleared!")){
+		if(testNoStorageErrors(purgeStatusElem, "Settings storage cleared!")){
 			setElements(defaults)
-
-			let data = {}
-			for(a in defaults){data[a] = defaults[a];}
-			sendUpdate(data)
+			sendUpdate(defaults)
 		}
 	})
 }
@@ -95,15 +91,35 @@ window.onload = ()=>{
 	saveStatusElem = document.getElementById("status")
 	purgeStatusElem = document.getElementById("purgestatus")
 
+	let settings = {} // used for initial setting of elements later
 	for (let a in defaults){
 		elems[a] = document.getElementById(a);
+		settings[a] = defaults[a]
 	}
 
 	document.getElementById("save").addEventListener('click', saveOptions)
 	document.getElementById("purge").addEventListener('click', purgeOptions)
 
-	chrome.storage.local.get(defaults, (data)=>{
-		setElements(data)
+	chrome.storage.local.get(["SETTINGS"], (data)=>{
+		for(let a in defaults){
+			if(a in data["SETTINGS"]){
+				let setting = data["SETTINGS"][a]
+				if(typeof setting === "string"){
+					if(setting == "true"){
+						setting = true
+					}else if(setting == "false"){
+						setting = false
+					}else{
+						let num = parseInt(setting)
+						if(!isNaN(num)){
+							setting = num
+						}
+					}
+				}
+				settings[a] = setting
+			}
+		}
+		setElements(settings)
 	})
 }
 
