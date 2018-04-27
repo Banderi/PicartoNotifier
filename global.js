@@ -145,14 +145,14 @@ function update() {
 								if (isDevMode()) {
 									console.log(name + " is live!");
 								}
-								if (notifications == "true") {										
+								if (notifications == true) {										
 									browser.notifications.create(name, {
 										type: "basic",
 										iconUrl: "https://picarto.tv/user_data/usrimg/" + name.toLowerCase() + "/dsdefault.jpg",
 										title: "Currently streaming on Picarto:",
 										message: name
 									}, function() {});
-									if (alert == "true") {
+									if (alert == true) {
 										ding.play();
 									}
 								}
@@ -188,7 +188,7 @@ function update() {
 			livecount = users.length;
 			
 			// fetch multistream invites
-			if (streamer == "true") {
+			if (streamer == true) {
 				
 				// get multistream data
 				$.ajax({
@@ -339,12 +339,12 @@ function update() {
 // fetch saved settings or generate default ones
 var settings = {};				// g
 var updateTime = "300000";		// s
-var notifications = "true";		// s
-var alert = "false";			// s
-var streamer = "false";			// s
-//var dashboard = {};				// +
+var notifications = true;		// s
+var alert = false;				// s
+var streamer = false;			// s
+//var dashboard = {};			// +
 var account = "free";			// n
-var picartobar = "true"			// s
+var picartobar = true			// s
 
 var updater;
 
@@ -381,7 +381,7 @@ storage.local.get("SETTINGS", function(items) {
 	updater = setInterval(update, updateTime);
 	
 	// hide Picarto official notification bar
-	if (picartobar == "true")
+	if (picartobar == true)
 	{
 		if (isDevMode()) {
 			console.log("Hiding official Picarto bar");

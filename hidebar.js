@@ -1,3 +1,6 @@
+if (chrome) {
+	storage = chrome.storage;
+}
 
 function isDevMode() {
     return !('update_url' in chrome.runtime.getManifest());
@@ -10,7 +13,7 @@ function injectCSS(style) {
 }
 
 // get setting from storage
-chrome.storage.local.get("SETTINGS", (item) => {
+storage.local.get("SETTINGS", (item) => {
 	// hide Picarto official notification bar via css injection
 	// if picartobar is undefined, default to false
 	// TODO requires reload of page if setting changed

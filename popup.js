@@ -107,7 +107,7 @@ function updateNames() {
 				//ownname = items[key];
 			}
 			else if (key == "MULTISTREAM_SESSION") {
-				if (items[key][0] && streamer == "true") {
+				if (items[key][0] && streamer == true) {
 					multistream = true;
 					
 					// add invites
@@ -301,7 +301,7 @@ function updateNames() {
 		});
 		
 		// streamer advanced mode!
-		if (streamer == "true") {
+		if (streamer == true) {
 			if (isDevMode()) {
 				console.log("(Streamer mode is enabled.)");
 			}
@@ -753,7 +753,7 @@ function updateNames() {
 
 // fetch saved settings or generate default ones
 var settings = {};				// g
-var streamer = "false";			// s
+var streamer = false;			// s
 var dashboard = {};				// +
 var account = "free";			// s
 var recentnames = new Array();	// +

@@ -4,6 +4,12 @@ this just handles the options.html interface with the local storage
 */
 let messageTimer = 3000
 
+if (chrome) {
+	extension = chrome.extension;
+	storage = chrome.storage;
+	browser = chrome;
+}
+
 let defaults = {
 	"update":300000,
 	"picartobar":true,
@@ -29,14 +35,14 @@ function sendUpdate (data) {
 	for(let a in data){
 		msg[a] = data
 	}
-	chrome.runtime.sendMessage(data);
+	browser.runtime.sendMessage(data);
 }
 
 // returns true if no errors on accessing storage
 // otherwise returns false
 // also sets temporary status message
 function testNoStorageErrors(statusElem, successMsg){
-	let err = chrome.runtime.lastError
+	let err = browser.runtime.lastError
 	if(err){
 		setMessage(statusElem, err)
 		return false;
@@ -70,7 +76,7 @@ function saveOptions() {
 			settings[a] = elem.value
 		}
 	}
-	chrome.storage.local.set({"SETTINGS":settings}, () => {
+	storage.local.set({"SETTINGS":settings}, () => {
 		if(testNoStorageErrors(saveStatusElem, "Options saved.")){
 			sendUpdate(settings)
 		}
@@ -78,7 +84,7 @@ function saveOptions() {
 }
 
 function purgeOptions() {
-	chrome.storage.local.clear(() => {
+	storage.local.clear(() => {
 		if(testNoStorageErrors(purgeStatusElem, "Settings storage cleared!")){
 			setElements(defaults)
 			sendUpdate(defaults)
@@ -100,14 +106,14 @@ window.onload = ()=>{
 	document.getElementById("save").addEventListener('click', saveOptions)
 	document.getElementById("purge").addEventListener('click', purgeOptions)
 
-	chrome.storage.local.get(["SETTINGS"], (data)=>{
+	storage.local.get(["SETTINGS"], (data)=>{
 		for(let a in defaults){
 			if(a in data["SETTINGS"]){
 				let setting = data["SETTINGS"][a]
 				if(typeof setting === "string"){
-					if(setting == "true"){
+					if(setting == true){
 						setting = true
-					}else if(setting == "false"){
+					}else if(setting == false){
 						setting = false
 					}else{
 						let num = parseInt(setting)
