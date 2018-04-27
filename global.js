@@ -145,14 +145,14 @@ function update() {
 								if (isDevMode()) {
 									console.log(name + " is live!");
 								}
-								if (notifications == true) {										
+								if (settings["notifications"] == true) {										
 									browser.notifications.create(name, {
 										type: "basic",
 										iconUrl: "https://picarto.tv/user_data/usrimg/" + name.toLowerCase() + "/dsdefault.jpg",
 										title: "Currently streaming on Picarto:",
 										message: name
 									}, function() {});
-									if (alert == true) {
+									if (settings["alert"] == true) {
 										ding.play();
 									}
 								}
@@ -177,9 +177,7 @@ function update() {
 			};				
 			loop();
 			
-			if (isDevMode()) {
-				browser.browserAction.setBadgeBackgroundColor( { color: "#33aa33"} );
-			}
+			browser.browserAction.setBadgeBackgroundColor( { color: settings["badgecolor"]} );
 			
 			// update badge text			
 			var badgetext = "";
@@ -188,7 +186,7 @@ function update() {
 			livecount = users.length;
 			
 			// fetch multistream invites
-			if (streamer == true) {
+			if (settings["streamer"] == true) {
 				
 				// get multistream data
 				$.ajax({
@@ -336,52 +334,31 @@ function update() {
 	
 }
 
-// fetch saved settings or generate default ones
-var settings = {};				// g
-var updateTime = "300000";		// s
-var notifications = true;		// s
-var alert = false;				// s
-var streamer = false;			// s
-//var dashboard = {};			// +
-var account = "free";			// n
-var picartobar = true			// s
+// get default settings or fetch from storage
+let defaults = {
+	"refresh" : 300000,
+	"picartobar" : true,
+	"notifications" : true,
+	"alert" : false,
+	"streamer" : false,
+	"badgecolor" : "#33aa33"
+};
 
+var settings = defaults;
 var updater;
 
-storage.local.get("SETTINGS", function(items) {
-	if (items["SETTINGS"]) {
-		settings = items["SETTINGS"];
-	} else if (localStorage["SETTINGS"]) {
-		settings = JSON.parse(localStorage["SETTINGS"]); // get backup data from localStorage
-	}
-	
-	if (settings) {
-		if (settings["update"]) {
-			updateTime = settings["update"];
-		}
-		if (settings["notifications"]) {
-			notifications = settings["notifications"];
-		}
-		if (settings["alert"]) {
-			alert = settings["alert"];
-		}
-		if (settings["streamer"]) {
-			streamer = settings["streamer"];
-		}
-		// if (settings["dashboard"]) {
-			// dashboard = settings["dashboard"];
-		// }
-		if (settings["picartobar"]) {
-			picartobar = settings["picartobar"];
-		}
+storage.local.get(["SETTINGS"], (data) => {
+	for (let a in data["SETTINGS"]) {
+		let setting = data["SETTINGS"][a];
+		settings[a] = setting;
 	}
 	
 	// start the update!
 	update();
-	updater = setInterval(update, updateTime);
+	updater = setInterval(update, settings["refresh"]);
 	
 	// hide Picarto official notification bar
-	if (picartobar == true)
+	if (settings["picartobar"] == true)
 	{
 		if (isDevMode()) {
 			console.log("Hiding official Picarto bar");
@@ -395,7 +372,7 @@ storage.local.get("SETTINGS", function(items) {
 			["blocking"]
 		);
 	}
-});
+})
 
 // create audio alert object
 var ding = new Audio('audio/ding.ogg');
@@ -418,14 +395,14 @@ browser.runtime.onMessage.addListener(
 			break
 		case "settingChanged":
 			if (isDevMode()) {
-				console.log("New settings - update: " + request.update);
+				console.log("New settings - update: " + request.refresh);
 			}
 			clearInterval(updater);
-			updateTime = request.update;
-			updater = setInterval(update, updateTime);
-			notifications = request.notifications;
-			alert = request.alert;
-			streamer = request.streamer;
+			settings["refresh"] = request.refresh;
+			updater = setInterval(update, settings["refresh"]);
+			settings["notifications"] = request.notifications;
+			settings["alert"] = request.alert;
+			settings["streamer"] = request.streamer;
 			break
 		case "updateAll":
 			clearInterval(updater);

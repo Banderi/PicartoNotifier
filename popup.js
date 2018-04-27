@@ -107,27 +107,21 @@ function updateNames() {
 				//ownname = items[key];
 			}
 			else if (key == "MULTISTREAM_SESSION") {
-				if (items[key][0] && streamer == true) {
+				if (items[key][0] && settings["streamer"] == true) {
 					multistream = true;
 					
 					// add invites
 					for (index in items[key]) {
 						
-						var found = jQuery.inArray(items[key][index]["name"], recentnames);
+						var found = jQuery.inArray(items[key][index]["name"], settings["recentnames"]);
 						if (found >= 0) {
 							// name already present
 						} else {
-							recentnames.push(items[key][index]["name"]);
+							settings["recentnames"].push(items[key][index]["name"]);
 						}
 						//var r = JSON.stringify(rec);
-						storage.local.get("SETTINGS", function(items) {
-							if (items["SETTINGS"]) {
-								settings = items["SETTINGS"];
-							}
-							settings["recentnames"] = recentnames;
-							browser.storage.local.set({"SETTINGS" : settings}, function() {
-								localStorage["SETTINGS"] = JSON.stringify(settings); // save backup data in localStorage
-							});
+						storage.local.set({"SETTINGS" : settings}, function() {
+							localStorage["SETTINGS"] = JSON.stringify(settings); // save backup data in localStorage
 						});
 						
 						// received pending invite
@@ -223,29 +217,23 @@ function updateNames() {
 				streaming = true;
 				
 				if (isDevMode()) {
-					console.log("account type: " + account);
+					console.log("account type: " + settings["account"]);
 				}
 				
-				var found = jQuery.inArray(key, recentnames);
+				var found = jQuery.inArray(key, settings["recentnames"]);
 				if (found >= 0) {
 					// name already present
 				} else {
-					recentnames.push(key);
+					settings["recentnames"].push(key);
 				}
 				//var r = JSON.stringify(rec);
-				storage.local.get("SETTINGS", function(items) {
-					if (items["SETTINGS"]) {
-						settings = items["SETTINGS"];
-					}
-					settings["recentnames"] = recentnames;
-					browser.storage.local.set({"SETTINGS" : settings}, function() {
-						localStorage["SETTINGS"] = JSON.stringify(settings); // save backup data in localStorage
-					});
+				storage.local.set({"SETTINGS" : settings}, function() {
+					localStorage["SETTINGS"] = JSON.stringify(settings); // save backup data in localStorage
 				});
 				
 				
 				// add link to the window				
-				if (account == "premium") {
+				if (settings["account"] == "premium") {
 					$('body').find('.con_live').append(
 						$('<div/>', {'class': 'conn_streamer', 'id': key}).append(
 							$('<div/>', {'class': 'conn_streamer_head'}).append(
@@ -301,13 +289,13 @@ function updateNames() {
 		});
 		
 		// streamer advanced mode!
-		if (streamer == true) {
+		if (settings["streamer"] == true) {
 			if (isDevMode()) {
 				console.log("(Streamer mode is enabled.)");
 			}
 			$("#advanced").show();
 			
-			if (account == "premium") {
+			if (settings["account"] == "premium") {
 				$("#invitebar").show();
 			} else {
 				$("#invitebar").hide();
@@ -483,7 +471,7 @@ function updateNames() {
 			// register the invite bar and button
 			function invite(name) {
 				if (name.length > 0 && name.length <= 24) {
-					if (name.toLowerCase() != ownname.toLowerCase()) {
+					if (name.toLowerCase() != settings["ownname"].toLowerCase()) {
 						//clearMessages();
 						$("#channelToInvite_txt").prop('disabled', true);
 						$("#inviteBtn").off();
@@ -751,40 +739,23 @@ function updateNames() {
 	});
 }
 
-// fetch saved settings or generate default ones
-var settings = {};				// g
-var streamer = false;			// s
-var dashboard = {};				// +
-var account = "free";			// s
-var recentnames = new Array();	// +
-var ownname = "";				// s
+// get default settings or fetch from storage
+let defaults = {
+	"dashboard" : {},
+	"ownname" : "",
+	"recentnames" : [],
+	"account" : "free",
+	"streamer" : false
+};
 
-storage.local.get("SETTINGS", function(items) {
-	if (items["SETTINGS"]) {
-		settings = items["SETTINGS"];
-	} else if (localStorage["SETTINGS"]) {
-		settings = JSON.parse(localStorage["SETTINGS"]); // get backup data from localStorage
+var settings = defaults;
+
+storage.local.get(["SETTINGS"], (data) => {
+	for (let a in data["SETTINGS"]) {
+		let setting = data["SETTINGS"][a];
+		settings[a] = setting;
 	}
-	
-	if (settings) {
-		if (settings["streamer"]) {
-			streamer = settings["streamer"];
-		}
-		if (settings["dashboard"]) {
-			dashboard = settings["dashboard"];
-		}
-		if (settings["account"]) {
-			account = settings["account"];
-		}
-		if (settings["recentnames"]) {
-			//recentnames = $.map($.parseJSON(settings["recentnames"]), function(el) { return el });
-			recentnames = settings["recentnames"];
-		}
-		if (settings["ownname"]) {
-			ownname = settings["ownname"];
-		}
-	}
-});
+})
 
 // update popup window
 $(document).ready(function() {
@@ -795,7 +766,7 @@ $(document).ready(function() {
 	var predictable = $('#channelToInvite_txt')[0];
 	$('#channelToInvite_txt').emailautocomplete({
 		//suggClass: "custom-classname", //default: "eac-sugg". your custom classname (optional)
-		domains: recentnames //additional domains (optional)
+		domains: settings["recentnames"] //additional domains (optional)
 	});
 	
 	if (isDevMode()) {

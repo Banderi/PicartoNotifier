@@ -11,12 +11,13 @@ if (chrome) {
 }
 
 let defaults = {
-	"update":300000,
-	"picartobar":true,
-	"notifications":true,
-	"alert":false,
-	"streamer":false
-}
+	"refresh" : 300000,
+	"picartobar" : true,
+	"notifications" : true,
+	"alert" : false,
+	"streamer" : false,
+	"badgecolor" : "#33aa33"
+};
 
 let elems = {};
 
@@ -25,15 +26,15 @@ let purgeStatusElem = null;
 
 // sets a temporary text content message for the specified elem
 function setMessage (elem, text) {
-	elem.textContent = text
-	setTimeout(() => {elem.textContent = ""}, messageTimer)
+	elem.textContent = text;
+	setTimeout(() => {elem.textContent = ""}, messageTimer);
 }
 
 // sends update to browser runtime for this extension
 function sendUpdate (data) {
-	let msg = {"message":"settingChanged"}
-	for(let a in data){
-		msg[a] = data
+	let msg = {"message" : "settingChanged"};
+	for(let a in data) {
+		msg[a] = data;
 	}
 	browser.runtime.sendMessage(data);
 }
@@ -42,24 +43,24 @@ function sendUpdate (data) {
 // otherwise returns false
 // also sets temporary status message
 function testNoStorageErrors(statusElem, successMsg){
-	let err = browser.runtime.lastError
+	let err = browser.runtime.lastError;
 	if(err){
-		setMessage(statusElem, err)
+		setMessage(statusElem, err);
 		return false;
 	}
-	setMessage(statusElem, successMsg)
+	setMessage(statusElem, successMsg);
 	return true;
 }
 
 // sets html elements based on data input
-function setElements(data){
-	for(let a in data){
-		if(a in elems){
+function setElements(data) {
+	for(let a in data) {
+		if(a in elems) {
 			let elem = elems[a]
-			if(elem.type === "checkbox"){
-				elem.checked = data[a]
-			}else{
-				elem.value = data[a]
+			if(elem.type === "checkbox") {
+				elem.checked = data[a];
+			} else {
+				elem.value = data[a];
 			}
 		}
 	}
@@ -68,64 +69,58 @@ function setElements(data){
 // save settings to local storage
 function saveOptions() {
 	let settings = {};
-	for(let a in elems){
-		let elem = elems[a]
-		if(elem.type === "checkbox"){
-			settings[a] = elem.checked
-		}else{
-			settings[a] = elem.value
+	for(let a in elems) {
+		let elem = elems[a];
+		if (elem.type === "checkbox") {
+			settings[a] = elem.checked;
+		} else {
+			settings[a] = elem.value;
 		}
 	}
-	storage.local.set({"SETTINGS":settings}, () => {
-		if(testNoStorageErrors(saveStatusElem, "Options saved.")){
-			sendUpdate(settings)
+	storage.local.set({"SETTINGS" : settings}, () => {
+		if (testNoStorageErrors(saveStatusElem, "Options saved.")) {
+			sendUpdate(settings);
 		}
 	})
 }
 
 function purgeOptions() {
 	storage.local.clear(() => {
-		if(testNoStorageErrors(purgeStatusElem, "Settings storage cleared!")){
-			setElements(defaults)
-			sendUpdate(defaults)
+		if(testNoStorageErrors(purgeStatusElem, "Settings storage cleared!")) {
+			setElements(defaults);
+			sendUpdate(defaults);
 		}
 	})
 }
 
 // update text and buttons
 window.onload = ()=>{
-	saveStatusElem = document.getElementById("status")
-	purgeStatusElem = document.getElementById("purgestatus")
+	saveStatusElem = document.getElementById("status");
+	purgeStatusElem = document.getElementById("purgestatus");
 
-	let settings = {} // used for initial setting of elements later
-	for (let a in defaults){
+	let settings = {}; // used for initial setting of elements later
+	for (let a in defaults) {
 		elems[a] = document.getElementById(a);
-		settings[a] = defaults[a]
+		settings[a] = defaults[a];
 	}
 
-	document.getElementById("save").addEventListener('click', saveOptions)
-	document.getElementById("purge").addEventListener('click', purgeOptions)
+	document.getElementById("save").addEventListener('click', saveOptions);
+	document.getElementById("purge").addEventListener('click', purgeOptions);
 
-	storage.local.get(["SETTINGS"], (data)=>{
-		for(let a in defaults){
-			if(a in data["SETTINGS"]){
-				let setting = data["SETTINGS"][a]
-				if(typeof setting === "string"){
-					if(setting == true){
-						setting = true
-					}else if(setting == false){
-						setting = false
-					}else{
-						let num = parseInt(setting)
-						if(!isNaN(num)){
-							setting = num
-						}
+	storage.local.get(["SETTINGS"], (data) => {
+		for (let a in defaults) {
+			if (a in data["SETTINGS"]) {
+				let setting = data["SETTINGS"][a];
+				if (typeof setting === "string") {
+					let num = parseInt(setting);
+					if (!isNaN(num)) {
+						setting = num;
 					}
 				}
-				settings[a] = setting
+				settings[a] = setting;
 			}
 		}
-		setElements(settings)
+		setElements(settings);
 	})
 }
 
