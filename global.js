@@ -406,7 +406,9 @@ browser.runtime.onMessage.addListener(
 			break
 		case "updateAll":
 			clearInterval(updater);
-			updater = setInterval(update, updateTime);
+			if (request.refresh)
+				settings["refresh"] = request.refresh;
+			updater = setInterval(update, settings["refresh"]);
 			break
 		case "getFullStorage":
 			if (isDevMode()) {
