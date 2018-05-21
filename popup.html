@@ -3,67 +3,31 @@
 	<title>Picarto Notifier Popup Window</title>
 	<script src="jquery.min.js"></script>
 	<script src="jquery.autocomplete.js"></script>
-	<script src="js/popup.js"></script>
-	<link rel="stylesheet" type="text/css" href="css/popup.css">
+	<script src="popup.js"></script>
+	<link rel="stylesheet" type="text/css" href="popup.css">
 </head>
 <body>
-	<div class="sidebar">
-		<div class="side_btn active t_main" id="t_main">
-			<img src="graphics\live.png" class="side_icon">
+	<div class="con_headings">Nobody is currently streaming.</div>
+	<div class="con_live"></div>
+	<div class="con_advanced" id="advanced">
+		<div class="con_dashboard">Picarto Stream Dashboard 1.02
+			<span class="chan_mode" title="Toggle commissions" id="commissions"><i class="icon">&#xe88e;</i></span>
+			<span class="chan_mode" title="Toggle NSFW" id="nsfw"><i class="icon">&#xe800;</i></span>
+			<span class="chan_mode" title="Toggle Gamemode" id="gamemode"><i class="icon">&#xe834;</i></span>
 		</div>
-		<div class="side_btn t_settings" id="t_settings">
-			<img src="graphics\settings.png" class="side_icon">
-		</div>
-	</div>
-	<div class="main">
-		<div id="t_main" class="tab t_main active">
-			<div class="submain" id="con_headings"></div>
-			<div class="submain" id="con_live"></div>
-			<div class="submain" id="con_advanced">
-				<div class="setting">
-					<input type="checkbox" class="checkslider" id="adv_btn">
-					<span class="setting_text">Streamer Mode</span>
-				</div>
-				
-				<div id="advanced">
-					<div id="dashboard-enabled">
-						<div class="con_dashboard">Picarto Stream Dashboard 1.02
-							<span class="chan_mode" title="Toggle commissions" id="commissions"><i class="icon">&#xe88e;</i></span>
-							<span class="chan_mode" title="Toggle NSFW" id="nsfw"><i class="icon">&#xe800;</i></span>
-							<span class="chan_mode" title="Toggle Gamemode" id="gamemode"><i class="icon">&#xe834;</i></span>
-						</div>
-						<div class="con_msg">
-							<div class="con_msgfloat">
-								<div class="conn_msgbox" id="msgbox">You can't invite yourself!</div>
-								<div class="conn_msgtail"></div>
-							</div>
-						</div>
-						<div class="con_invitebar" id="invitebar">
-							<div class="input-group">
-								<input type="text" class="form-control" aria-describedby="inviteBtn" name="channels" id="channelToInvite_txt" placeholder="Channelname" autocomplete="on" maxlength="24">
-								<span class="input-group-addon btnBase Dark displayCell" id="inviteBtn">Invite</span>
-							</div>
-						</div>
-						<div id="ms_invites"></div>
-					</div>
-					
-					<div id="dashboard-disabled">
-						<span class="oauth-warning">You need to connect OAuth on your Picarto page to be able to use the dashboard features.</span>
-						<button type="button" class="longbutton" id="oauth_connect">Generate OAuth token</button>
-					</div>
-					
-				</div>
+		<div class="con_msg">
+			<div class="con_msgfloat">
+				<div class="conn_msgbox" id="msgbox">You can't invite yourself!</div>
+				<div class="conn_msgtail"></div>
 			</div>
 		</div>
-		
-		
-		
-		
-		
-		
-		<div id="t_settings" class="tab t_settings">
-			
+		<div class="con_invitebar" id="invitebar">
+			<div class="input-group">
+				<input type="text" class="form-control" aria-describedby="inviteBtn" name="channels" id="channelToInvite_txt" placeholder="Channelname" autocomplete="on" maxlength="24">
+				<span class="input-group-addon btnBase Dark displayCell" id="inviteBtn">Invite</span>
+			</div>
 		</div>
+		<div class="con_invites"></div>
 	</div>
 </body>
 </html>

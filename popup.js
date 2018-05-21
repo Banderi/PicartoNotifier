@@ -90,159 +90,43 @@ function inArrayCaseInsensitive(needle, haystackArray){
 	return result;
 }
 
-var recentnames = [];
-var peoplelive = false;
-var multistream = false;
-
-var picartoClientID = "Pb5mFzEq7MMetQ8p"
-var redirectURI = "https://banderi.github.io/PicartoNotifier/redirect.html"
-var crxID = "fifjhakdmflgahkghkijipchfomdajfn"
-var picartoURL = "https://oauth.picarto.tv/authorize?redirect_uri=" + redirectURI + "&response_type=token&scope=readpub readpriv write&state=OAuth2Implicit&client_id=" + picartoClientID
-var tokenRegex = RegExp("[&#]access_token=(.+?)(?:&|$)")
-var token = "";
-
-var livecache = {};
-
-function OAuthConnect(interactive = false) {
-	console.log("Parsing oauth...");
-	browser.identity.launchWebAuthFlow({'url': picartoURL,'interactive': interactive}, (redirect_url) => {
-		
-		chrome.tabs.onUpdated.addListener(function authorizationHook(tabId, changeInfo, tab) {
-			if(tab.title.indexOf("access_token=") >=0) {
-				var url = tab.title;
-				let parsed = tokenRegex.exec(url);
-				if (parsed) {
-					console.log("Logged in!");
-					token = "Bearer " + parsed[1];
-					/* forceUpdate(); */
-				} /* else {
-					token = "";
-					console.group("OAuth2 Failed:");
-					console.log(redirect_url);
-					console.log(parsed);
-					console.groupEnd();
-				} */
-				chrome.tabs.onUpdated.removeListener(authorizationHook);          
-			}
-       });
-		
-		
-		
-		
-	})
-}
-
-function appendLiveLink(name) {
-	if (settings["account"] == "premium" || true) {
-		$('body').find('#con_live').append(
-			$('<div/>', {'class': 'conn_streamer', 'id': name}).append(
-				$('<div/>', {'class': 'conn_streamer_head'}).append(
-					$('<div/>', {'class': 'col'}).append(
-						$('<img/>', {'class': 'conn_avatar'}).attr("src", "https://picarto.tv/user_data/usrimg/" + name.toLowerCase() + "/dsdefault.jpg")
-					)
-					.append(
-						$('<span/>', {'class': 'conn_user', text: name})
-					)
-					.append(
-						$('<span/>', {'class': 'ms_button ms_inv', 'title': 'Invite to multistream', 'value': name}).append(
-							$('<i/>', {'class': 'icon'}).html('&#xe814;')
-						)
-					)
-				)
-			)
-		);
-	} else {
-		$('body').find('#con_live').append(
-			$('<div/>', {'class': 'conn_streamer', 'id': name}).append(
-				$('<div/>', {'class': 'conn_streamer_head'}).append(
-					$('<div/>', {'class': 'col'}).append(
-						$('<img/>', {'class': 'conn_avatar'}).attr("src", "https://picarto.tv/user_data/usrimg/" + name.toLowerCase() + "/dsdefault.jpg")
-					)
-					.append(
-						$('<span/>', {'class': 'conn_user', text: name})
-					)
-				)
-			)
-		);
-	}
-	
-	if (!token)
-		$(".ms_button").hide();
-};
-
-function appendLiveButtons() {
-	
-}
-
-function updateLive() {
-	storage.local.get("LIVE", function(items) {
-		
-		// cache didn't change, so don't kill the DOM
-		if (JSON.stringify(livecache) === JSON.stringify(items["LIVE"])) {
-			return;
-		}
-		
-		$('body').find('#con_live').empty();
-		$('body').find('#ms_invites').empty();
-		
-		livecache = items["LIVE"];
-		peoplelive = false;
-		
-		// loop through cached users
-		for (u in livecache) {
-			
-			let name = u;
-			let user = livecache[u];
-			
-			var found = jQuery.inArray(name, recentnames);
-			if (found >= 0) {
-				// name already present
-			} else {
-				recentnames.push(name);
-			}
-			storage.local.set({"RECENTNAMES" : recentnames});
-			
-			
-			// add link to the window				
-			appendLiveLink(name);
-			
-			peoplelive = true;
-		}
-	});
-}
-
 // main update function
-function update() {
+function updateNames() {
 	
-	multistream = false;
-	
-	
-	updateLive();
+	var streaming = false;
+	var multistream = false;
 	
 	storage.local.get(null, function(items) {
+		$('body').find('.con_live').empty();
+		$('body').find('.con_invites').empty();
 	
 		var keys = Object.keys(items);
 		keys.forEach(function(key, index) {
 		
-			
-			if (key == "MULTISTREAM_SESSION") {
-				if (items[key][0] && settings["streamer"] == true && false) {	// thanks for breaking this, Picarto
+			if (key == "USERNAME" || key == "SETTINGS") {
+				//ownname = items[key];
+			}
+			else if (key == "MULTISTREAM_SESSION") {
+				if (items[key][0] && settings["streamer"] == true) {
 					multistream = true;
 					
 					// add invites
 					for (index in items[key]) {
 						
-						var found = jQuery.inArray(items[key][index]["name"], recentnames);
+						var found = jQuery.inArray(items[key][index]["name"], settings["recentnames"]);
 						if (found >= 0) {
 							// name already present
 						} else {
-							recentnames.push(items[key][index]["name"]);
+							settings["recentnames"].push(items[key][index]["name"]);
 						}
-						storage.local.set({"RECENTNAMES" : recentnames});
+						//var r = JSON.stringify(rec);
+						storage.local.set({"SETTINGS" : settings}, function() {
+							localStorage["SETTINGS"] = JSON.stringify(settings); // save backup data in localStorage
+						});
 						
 						// received pending invite
 						if (items[key][index]["status"] == "received") { 
-							$('body').find('#ms_invites').append(
+							$('body').find('.con_invites').append(
 								$('<div/>', {'class': 'conn_invite'}).append(
 									$('<div/>', {'class': 'conn_streamer_head'}).append(
 										$('<div/>', {'class': 'col'}).append(
@@ -267,7 +151,7 @@ function update() {
 						}
 						// attending multistream session
 						else if (items[key][index]["status"] == "attending") {
-							$('body').find('#ms_invites').append(
+							$('body').find('.con_invites').append(
 								$('<div/>', {'class': 'conn_invite'}).append(
 									$('<div/>', {'class': 'conn_streamer_head'}).append(
 										$('<div/>', {'class': 'col'}).append(
@@ -287,7 +171,7 @@ function update() {
 						}
 						// sent pending invite
 						else if (items[key][index]["status"] == "sent") {
-							$('body').find('#ms_invites').append(
+							$('body').find('.con_invites').append(
 								$('<div/>', {'class': 'conn_invite'}).append(
 									$('<div/>', {'class': 'conn_streamer_head'}).append(
 										$('<div/>', {'class': 'col'}).append(
@@ -307,7 +191,7 @@ function update() {
 						}
 						// hosting multistream session
 						else if (items[key][index]["status"] == "hosting") {
-							$('body').find('#ms_invites').append(
+							$('body').find('.con_invites').append(
 								$('<div/>', {'class': 'conn_invite'}).append(
 									$('<div/>', {'class': 'conn_streamer_head'}).append(
 										$('<div/>', {'class': 'col'}).append(
@@ -329,49 +213,93 @@ function update() {
 					}
 				}
 			}
-			else if (key == "USERNAME") {
-				ownname = items[key];
-				if (ownname === false) {
-					$('body').find('#con_headings').text("User not logged in! Please log in to Picarto.tv to use this.");
-					$('body').find('#con_live').hide();
-					$('body').find('#con_advanced').hide();
+			else if (items[key]) {
+				streaming = true;
+				
+				if (isDevMode()) {
+					console.log("account type: " + settings["account"]);
 				}
-			} else if (key == "SETTINGS") {
-				//ownname = items[key];
+				
+				var found = jQuery.inArray(key, settings["recentnames"]);
+				if (found >= 0) {
+					// name already present
+				} else {
+					settings["recentnames"].push(key);
+				}
+				//var r = JSON.stringify(rec);
+				storage.local.set({"SETTINGS" : settings}, function() {
+					localStorage["SETTINGS"] = JSON.stringify(settings); // save backup data in localStorage
+				});
+				
+				
+				// add link to the window				
+				if (settings["account"] == "premium") {
+					$('body').find('.con_live').append(
+						$('<div/>', {'class': 'conn_streamer', 'id': key}).append(
+							$('<div/>', {'class': 'conn_streamer_head'}).append(
+								$('<div/>', {'class': 'col'}).append(
+									$('<img/>', {'class': 'conn_avatar'}).attr("src", "https://picarto.tv/user_data/usrimg/" + key.toLowerCase() + "/dsdefault.jpg")
+								)
+								.append(
+									$('<span/>', {'class': 'conn_user', text: key})
+								)
+								.append(
+									$('<span/>', {'class': 'ms_button ms_inv', 'title': 'Invite to multistream', 'value': key}).append(
+										$('<i/>', {'class': 'icon'}).html('&#xe814;')
+									)
+								)
+							)
+						)
+					);
+				} else {
+					$('body').find('.con_live').append(
+						$('<div/>', {'class': 'conn_streamer', 'id': key}).append(
+							$('<div/>', {'class': 'conn_streamer_head'}).append(
+								$('<div/>', {'class': 'col'}).append(
+									$('<img/>', {'class': 'conn_avatar'}).attr("src", "https://picarto.tv/user_data/usrimg/" + key.toLowerCase() + "/dsdefault.jpg")
+								)
+								.append(
+									$('<span/>', {'class': 'conn_user', text: key})
+								)
+							)
+						)
+					);
+				}
+			}
+		});
+		if (streaming) {
+			$('body').find('.con_headings').text("Currently streaming:");
+			$('body').find('.con_live').show();
+		}
+		// loop through links
+		var links = $('body').find('.conn_streamer');
+		if (isDevMode()) {
+			console.log("links are: " + links.length);
+		}
+		links.each(function() {
+			var name = $(this).attr('id');
+			if (isDevMode()) {
+				console.log($(this) + " : " + name);
 			}
 			
-		});
-		
-		if(ownname === false)
-			return;
-		if (peoplelive) {
-			$('body').find('#con_headings').text("Currently streaming:");
-			$('body').find('#con_headings').addClass("streaming");
-			
-			// register the links
-			var links = $('body').find('.conn_streamer');
-			links.each(function() {
-				var name = $(this).attr('id');
-				document.getElementById(name).addEventListener('click', function() {
-					openStreamer(name);
-				});
+			// register the link
+			document.getElementById(name).addEventListener('click', function() {
+				openStreamer(name);
 			});
-		} else {
-			$('body').find('#con_headings').text("Nobody is currently streaming.");
-			$('body').find('#con_headings').removeClass("streaming");
-		}
+		});
 		
 		// streamer advanced mode!
 		if (settings["streamer"] == true) {
+			if (isDevMode()) {
+				console.log("(Streamer mode is enabled.)");
+			}
 			$("#advanced").show();
-			$("#invitebar").show();
-			var dashboard = false;
 			
-			/* if (settings["account"] == "premium") {
+			if (settings["account"] == "premium") {
 				$("#invitebar").show();
 			} else {
 				$("#invitebar").hide();
-			} */
+			}
 			
 			// register dashboard buttons
 			function setGameMode(value) {
@@ -562,8 +490,7 @@ function update() {
 							} else {
 								switch (data.update) {
 									case 1:
-										break; 	// thanks for breaking this, Picarto
-										$('body').find('#ms_invites').append(
+										$('body').find('.con_invites').append(
 											$('<div/>', {'class': 'conn_invite'}).append(
 												$('<div/>', {'class': 'conn_streamer_head'}).append(
 													$('<div/>', {'class': 'col'}).append(
@@ -655,7 +582,7 @@ function update() {
 			
 			if (multistream) {
 				//$('body').find('.con_multi').text("Current multistream sessions:");
-				//$('body').find('#ms_invites').show();
+				//$('body').find('.con_invites').show();
 			}
 			// loop through invite accept/decline/revoke buttons
 			var decline = $('body').find('.ms_dec');
@@ -804,7 +731,10 @@ function update() {
 			});
 		}
 		else {
-			$("#advanced").hide();
+			if (isDevMode()) {
+				console.log("(Streamer mode is disabled.)");
+			}
+			$("#con_advanced").hide();
 		}
 	});
 }
@@ -813,6 +743,7 @@ function update() {
 let defaults = {
 	"dashboard" : {},
 	"ownname" : "",
+	"recentnames" : [],
 	"account" : "free",
 	"streamer" : false
 };
@@ -824,82 +755,21 @@ storage.local.get(["SETTINGS"], (data) => {
 		let setting = data["SETTINGS"][a];
 		settings[a] = setting;
 	}
-	
-	$("#adv_btn")[0].checked = settings["streamer"];
-});
-storage.local.get(["RECENTNAMES"], (data) => {
-	if (data["RECENTNAMES"])
-		recentnames = data["RECENTNAMES"];
-});
+})
 
 // update popup window
 $(document).ready(function() {
-	update();
-	var updater = setInterval(update, 1000);
+	updateNames();
+	//clearInterval(updater);
+	var updater = setInterval(updateNames, 5000);
 	
 	var predictable = $('#channelToInvite_txt')[0];
 	$('#channelToInvite_txt').emailautocomplete({
 		//suggClass: "custom-classname", //default: "eac-sugg". your custom classname (optional)
-		domains: recentnames //additional domains (optional)
-	});
-	
-	// setup navbar
-	$(".side_btn").on("click", function() {
-		$(".side_btn").removeClass("active");
-		$(".tab").removeClass("active");
-		$("." + $(this).attr('id')).addClass("active");
+		domains: settings["recentnames"] //additional domains (optional)
 	});
 	
 	if (isDevMode()) {
-		console.log("STARTUP!");
+		console.log("updated!");
 	}
-	
-	$("#adv_btn").on("click", function() {
-		settings["streamer"] = $(this)[0].checked;
-		storage.local.set({"SETTINGS" : settings});
-		
-		if (settings["streamer"]) {
-			if (isDevMode())
-				console.log("(Streamer mode is enabled.)");
-			
-			$("#advanced").show();
-			if (token)
-				$(".ms_inv").show();
-		}
-		else if (!settings["streamer"]) {
-			if (isDevMode())
-				console.log("(Streamer mode is disabled.)");
-			$("#advanced").hide();
-			$(".ms_inv").hide();
-		}
-	});
-	
-	if (token) {
-		$("#dashboard-enabled").show();
-		$("#dashboard-disabled").hide();
-	}
-	else {
-		$("#dashboard-enabled").hide();
-		$("#dashboard-disabled").show();
-	}
-	
-	$("#oauth_connect").on("click", function() {
-		OAuthConnect(true);
-	});
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
