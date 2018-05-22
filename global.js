@@ -70,6 +70,28 @@ async function getAPI(url, callback) {
 	});
 }
 
+async function postAPI(url, callback) {
+	await $.ajax({
+		url: "https://api.picarto.tv/v1/" + url,
+		method: "POST",
+		crossDomain: true,
+		contentType: "application/json; charset=utf-8",
+		cache: false,
+		beforeSend: function (xhr) {
+			xhr.setRequestHeader("Authorization", token);
+		},
+		success: function (data) {
+			/* console.log("woo!"); */
+			
+			typeof callback === 'function' && callback(data);
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+			console.log(textStatus);
+			console.log(errorThrown);
+		}
+	});
+}
+
 // download Picarto page to reload session
 function loggedintest() {
 	if (isDevMode()) {
@@ -190,12 +212,15 @@ function updateAPI(callback) {
 						storage.local.set({"USERNAME" : a["channel_details"]["name"]});
 					});
 					getAPI("user/notifications", function(c) {
-						notifications = c.length;
+						if (c)
+							notifications = c.length;
+						else
+							notifications = 0;
 						updateBadge();
 						storage.local.set({"API_NOTIFICATIONS" : c});
 						
 						// automatically remove notifications if setting is enabled
-						if (settings["picartobar"] == true && c[0]) {
+						if (settings["picartobar"] == true && c && c[0]) {
 							for (n in c) {
 								postAPI("user/notifications/" + c[n]["uuid"] + "/delete");
 							}
