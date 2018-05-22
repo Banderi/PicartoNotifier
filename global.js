@@ -12,8 +12,63 @@ var livecount = 0;
 var invitecount = 0;
 var ownname = "";
 var exploreData = {};
+var notifications = 0;
 
 var notloggedinrecall = false;
+
+var token = "";
+
+var picartoClientID = "Pb5mFzEq7MMetQ8p"
+var redirectURI = "https://banderi.github.io/PicartoNotifier/redirect.html"
+var crxID = "fifjhakdmflgahkghkijipchfomdajfn"
+var picartoURL = "https://oauth.picarto.tv/authorize?redirect_uri=" + redirectURI + "&response_type=token&scope=readpub readpriv write&state=OAuth2Implicit&client_id=" + picartoClientID
+var tokenRegex = RegExp("[&#]access_token=(.+?)(?:&|$)")
+
+function OAuthConnect(interactive = false, callback) {
+	console.log("Parsing oauth...");
+	console.log("Redirect URI: " + redirectURI);
+	browser.identity.launchWebAuthFlow({'url': picartoURL,'interactive': interactive}, (redirect_url) => {
+		let parsed = tokenRegex.exec(redirect_url);
+		console.log("Redirect received! Parsing...");
+		if (parsed) {
+			console.log("Logged in!");
+			token = "Bearer " + parsed[1];
+			storage.local.set({"OAUTH" : token});
+			
+			typeof callback === 'function' && callback();
+		} else {
+			token = "";
+			console.group("OAuth2 Failed:");
+			console.log(redirect_url);
+			console.log(parsed);
+			console.groupEnd();
+			typeof callback === 'function' && callback();
+		}
+	});
+}
+
+
+async function getAPI(url, callback) {
+	await $.ajax({
+		url: "https://api.picarto.tv/v1/" + url,
+		method: "GET",
+		dataType: "json",
+		crossDomain: true,
+		contentType: "application/json; charset=utf-8",
+		cache: false,
+		beforeSend: function (xhr) {
+			xhr.setRequestHeader("Authorization", token);
+		},
+		success: function (data) {
+			/* console.log("woo!"); */
+			
+			typeof callback === 'function' && callback(data);
+		},
+		error: function (jqXHR, textStatus, errorThrown) {
+			console.log("darn");
+		}
+	});
+}
 
 // download Picarto page to reload session
 function loggedintest() {
@@ -33,7 +88,6 @@ function loggedintest() {
 	});
 	notloggedinrecall = true;
 }
-
 
 function notify(name, type) {
 	
@@ -121,16 +175,50 @@ function updateLive(callback) {
 	});
 }
 
-function updateNotifications(callback) {
+function updateAPI(callback) {
 	
-	
+	storage.local.get(["OAUTH"], (data) => {
+		if (data["OAUTH"])
+			token = data["OAUTH"];
+		if (token) {
+			storage.local.get(["CACHESTAMP"], (data) => {
+				if (data["CACHESTAMP"] && Date.now() < data["CACHESTAMP"] + 15000) {
+					//
+				} else {
+					getAPI("user", function(a) {
+						storage.local.set({"API_USER" : a});
+						storage.local.set({"USERNAME" : a["channel_details"]["name"]});
+					});
+					getAPI("user/notifications", function(c) {
+						notifications = c.length;
+						updateBadge();
+						storage.local.set({"API_NOTIFICATIONS" : c});
+						
+						// automatically remove notifications if setting is enabled
+						if (settings["picartobar"] == true && c[0]) {
+							for (n in c) {
+								postAPI("user/notifications/" + c[n]["uuid"] + "/delete");
+							}
+							c = {};
+							storage.local.set({"API_NOTIFICATIONS" : c});
+						}
+						
+						
+					});
+				}
+			});
+			getAPI("user/multistream", function(b) {
+				storage.local.set({"API_MULTISTREAM" : b});
+			});
+		}
+	});
 	typeof callback === 'function' && callback();
 }
 
 function updateBadge(callback) {
 	
 	browser.browserAction.setBadgeBackgroundColor( { color: settings["badgecolor"]} );
-			
+	
 	// update badge text			
 	var badgetext = "";
 	var badgetooltip = "";
@@ -139,11 +227,6 @@ function updateBadge(callback) {
 	// fetch multistream invites
 	if (settings["streamer"] == true) {
 		
-		//invitecount = parse.length;
-		/* if (isDevMode()) {
-			console.log("Live: " + livecount);
-			console.log("Invites: " + invitecount);
-		} */
 		if (livecount == 1) {
 			badgetext = "1";
 			badgetooltip = "1 person streaming";
@@ -174,56 +257,8 @@ function updateBadge(callback) {
 		}
 		browser.browserAction.setBadgeText({"text": badgetext});
 		browser.browserAction.setTitle({"title": badgetooltip});
-		
-		// get profile/dashboard settings from storage or pull from the website
-		if (ownname) {
-			var url = "https://api.picarto.tv/v1/channel/name/" + ownname;
-			$.ajax({
-				url: url,
-				success: function(data) {
-					if (isDevMode()) {
-						console.log("Fetching dashboard data...");
-					}
-					var obj = data;
-					
-					var gamingmode = obj["gaming"];
-					var nsfw = obj["adult"];
-					var commissions = obj["commissions"];
-					account = obj["account_type"];
-					
-					if (isDevMode()) {
-						console.log(gamingmode);
-						console.log(nsfw);
-						console.log(commissions);
-						console.log(account);
-					}
-					
-					var dashboard = {};
-					
-					dashboard["gamingmode"] = gamingmode;
-					dashboard["nsfw"] = nsfw;
-					dashboard["commissions"] = commissions;
-					
-					storage.local.get("SETTINGS", function(items) {
-						if (items["SETTINGS"]) {
-							settings = items["SETTINGS"];
-						} else if (localStorage["SETTINGS"]) {
-							settings = JSON.parse(localStorage["SETTINGS"]); // get backup data from localStorage
-						}
-						settings["dashboard"] = dashboard;
-						settings["account"] = account;
-						browser.storage.local.set({"SETTINGS" : settings}, function() {
-							localStorage["SETTINGS"] = JSON.stringify(settings); // save backup data in localStorage
-						});
-					});
-				}
-			});
-		}
 	}
-	else {
-		/* if (isDevMode()) {
-			console.log("Live: " + livecount);
-		} */				
+	else {		
 		if (livecount == 1) {
 			badgetext = "1";
 			badgetooltip = "1 person streaming";
@@ -238,6 +273,21 @@ function updateBadge(callback) {
 		browser.browserAction.setTitle({"title": badgetooltip});
 	}
 	
+	if(settings["badgenotif"] == true) {
+		if (notifications == 1) {
+			badgetext = "1";
+			badgetooltip = "1 person streaming";
+		} else if (notifications > 1) {
+			badgetext = notifications.toString();
+			badgetooltip = notifications.toString() + " notifications";
+		} else {
+			var badgetext = "";
+			var badgetooltip = "";
+		}
+		browser.browserAction.setBadgeText({"text": badgetext});
+		browser.browserAction.setTitle({"title": badgetooltip});
+	}
+	
 	typeof callback === 'function' && callback();
 }
 
@@ -245,10 +295,6 @@ function updateBadge(callback) {
 function update() {
 	$.post("https://picarto.tv/process/explore", {follows: true}).done(function(data) {
 		exploreData = JSON.parse(data);
-		
-		if (isDevMode()) {
-			console.log("Updating...");
-		}
 		
 		// check user session
 		if (exploreData[0] && exploreData[0].error == "notLoggedin") {
@@ -265,13 +311,11 @@ function update() {
 		}
 		else {
 			notloggedinrecall = false;
-			storage.local.set({"USERNAME" : ""});
+			/* storage.local.set({"USERNAME" : ""}); */
 			updateLive(()=>{
-				updateNotifications(()=>{
+				updateAPI(()=>{
 					updateBadge(()=>{
-						if (isDevMode()) {
-							console.log("Update done!");
-						}
+						// done!
 					})
 				})
 			})
@@ -281,27 +325,40 @@ function update() {
 
 // get default settings or fetch from storage
 let defaults = {
-	"refresh" : 300000,
-	"picartobar" : true,
 	"notifications" : true,
 	"alert" : false,
 	"streamer" : false,
+	"picartobar" : false,
+	"badgenotif" : false,
 	"badgecolor" : "#33aa33"
 };
 
-var settings = defaults;
+var settings = $.extend(true, {}, defaults);
 var updater;
 
-storage.local.get(["SETTINGS"], (data) => {
-	for (let a in data["SETTINGS"]) {
-		let setting = data["SETTINGS"][a];
-		settings[a] = setting;
-	}
-	
-	// start the update!
-	update();
-	updater = setInterval(update, 5000);
-})
+function getSettings() {
+	storage.local.get(["SETTINGS"], (data) => {
+		for (let a in data["SETTINGS"]) {
+			let setting = data["SETTINGS"][a];
+			settings[a] = setting;
+		}
+		storage.local.get(["OAUTH"], (data) => {
+			if (data["OAUTH"])
+				token = data["OAUTH"];
+			
+			// start the update!
+			update();
+			updater = setInterval(update, 5000);
+		});
+	})
+}
+
+function restart() {
+	clearInterval(updater);
+	getSettings()
+}
+
+getSettings();
 
 // create audio alert object
 var ding = new Audio('audio/ding.ogg');
@@ -324,20 +381,37 @@ browser.runtime.onMessage.addListener(
 			break
 		case "settingChanged":
 			if (isDevMode()) {
-				console.log("New settings - update: " + request.refresh);
+				console.log("Settings updated!");
 			}
-			settings["notifications"] = request.notifications;
-			settings["alert"] = request.alert;
-			settings["streamer"] = request.streamer;
+			for (s in request) {
+				if (s != "message") {
+					settings[s] = request[s];
+				}
+			}
+			restart();
 			break
 		case "updateAll":
+			restart();
 			break
-		case "getFullStorage":
-			if (isDevMode()) {
-				console.log("getFullStorage");
-			}
-			storage.local.get(null, function(items) {
-				sendResponse(items);
+		case "purgeAll":
+			settings = {};
+			livecount = 0;
+			invitecount = 0;
+			ownname = "";
+			exploreData = {};
+			notloggedinrecall = false;
+			token = "";
+			restart();
+			break;
+		case "notificationRemoved":
+			notifications -= 1;
+			updateBadge();
+			break;
+		case "oauth":
+			OAuthConnect(true, function() {
+				browser.browserAction.getBadgeText({}, function(result) {
+					sendResponse("OK");
+				});
 			});
 			return true;
 		case "getBadgeText":

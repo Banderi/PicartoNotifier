@@ -33,7 +33,7 @@
 			"http://picarto.tv/*",
 			"https://picarto.tv/*"
 		],
-		"js": [ "jquery.min.js", "hidebar.js" ],
+		"js": [ "js/jquery.min.js" ],
 		"run_at" : "document_start"
 	} ],
 	"browser_action":

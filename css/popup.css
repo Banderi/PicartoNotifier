@@ -45,8 +45,7 @@ body {
 	opacity: 1;
 }
 .side_icon {
-	max-width: 26px;
-	max-height: 20px;
+	width: 22px;
 }
 .main {
 	width: 250px;
@@ -61,7 +60,7 @@ body {
 	-moz-transition: all ease .3s;
 	transition: all ease .3s;
 }
-#con_headings {
+.heading {
 	text-align: center;
 	font-size: 1.2em;
 	vertical-align: top;
@@ -70,7 +69,7 @@ body {
 	
 	margin-bottom: 5px;
 }
-#con_headings.streaming {
+.heading.streaming {
 	font-family: verdana;
 }
 .submain {
@@ -84,11 +83,18 @@ body {
 }
 .con_dashboard {
 	height: 30px;
-	padding-top: 7px;
+	padding-top: 5px;
 	padding-left: 5px;
 	margin-bottom: -3px;
 	font-style: oblique;
 	font-size: 0.8em;
+}
+.dashboard_pad {
+	position: relative;
+    top: -24;
+}
+#con_live {
+	min-height: 20px;
 }
 .con_msg {
 	z-index:1000;
@@ -170,7 +176,7 @@ body {
 	vertical-align: middle;
 	max-width: calc(100% - 50px);
 	margin-left: 10px;
-	width: 62%;
+	width: width: 55%;
 }
 .conn_livetime {
 	display: inline-block;
@@ -200,7 +206,7 @@ body {
 .ms_acc {
 	color: #88b530;
 }
-.ms_dec, .ms_rev {
+.ms_dec, .ms_rev, .ms_removeall {
 	color: #b53f30;
 }
 .ms_inv {
@@ -222,6 +228,29 @@ body {
 	box-sizing: border-box;
 	width: 25px;
 	height: 25px;
+}
+.ms_removeall {
+    background-color: #646067;
+	color: #03d41e;
+    border: none;
+	position: absolute;
+    top: 18;
+    right: 10;
+	padding: 3px;
+    border-radius: 8px;
+	opacity: 0.5;
+	-webkit-transition: all ease .3s;
+	-moz-transition: all ease .3s;
+	transition: all ease .3s;
+}
+.ms_removeall:hover {
+	opacity: 1;
+}
+.ms_removeall:active {
+	opacity: 1;
+	background-color: white;
+    border-color: white;
+	color: #1da456;
 }
 .icon {
 	font-family: 'Picarto Symbols';
@@ -339,7 +368,9 @@ body {
 	opacity: 1;
 	display: flex;
 }
-
+input, .chan_mode{
+	z-index: 10;
+}
 input[type=checkbox].checkslider {
     position: relative;
     display: inline-block;
@@ -388,14 +419,25 @@ input[type=checkbox].checkslider:after {
 input[type=checkbox].checkslider:checked:after {
     left: 20px;
 }
+input[type=checkbox].checkslider:disabled {
+    opacity: 0.5;
+	cursor: default;
+}
 .setting {
 	display: flex;
+	flex-wrap: wrap;
 }
 .setting_text {
-	padding: 4px 10px;
+	padding: 4px 7px;
     font-family: verdana;
 }
-#dashboard-disabled {
+.setting_subtext {
+	font-style: italic;
+    font-size: 12px;
+    color: #99989c;
+    padding: 2px 0px 10px 4px;
+}
+.dashboard-disabled {
 	margin-top: 4px;
     padding: 5px 8px 8px 8px;
     display: flex;
@@ -410,6 +452,7 @@ input[type=checkbox].checkslider:checked:after {
 	padding-bottom: 6px;
 	font-style: italic;
 	text-align: center;
+	color: #99989c;
 }
 .longbutton {
 	background-color: #1da456;
@@ -417,7 +460,7 @@ input[type=checkbox].checkslider:checked:after {
     color: white;
 	font-size: 14;
     font-weight: 600;
-	opacity: 0.4;
+	opacity: 0.75;
     border-radius: 10px;
     -webkit-border-radius: 10px;
     -moz-border-radius: 10px;
@@ -440,9 +483,73 @@ input[type=checkbox].checkslider:checked:after {
     border-color: white;
 	color: #1da456;
 }
-
-
-
+.slimbtn {
+	margin: 3;
+    height: 25;
+    font-size: 13;
+    padding: 0px 10px 0px 10px;
+}
+.colortext {
+	position: absolute;
+	width: 72;
+    height: 26;
+	color: white;
+	text-align: center;
+	background: none;
+    border: none;
+	pointer-events: none;
+}
+.flex-center {
+	align-items: center;
+	justify-content: center;
+}
+#con_notifications {
+	/* max-height: 400px;
+	overflow-y: scroll;
+    overflow-x: hidden; */
+	display: flex;
+    flex-flow: column;
+}
+.conn_notification {
+	display: inline-block;
+	border-radius: 10px;
+	background-color: #5f646d;
+	margin-bottom: 3px;
+	padding: 4px 0px;
+}
+.conn_user.notif {
+	top: -6;
+	font-size: 12;
+	max-width: calc(100% - 67px);
+	margin-left: 4;
+}
+.conn_user.notif.name {
+	top: 0;
+	color: #8be4e1;
+	max-width: 100%;
+	font-weight: 600;
+}
+.timestamp {
+	position: absolute;
+    top: 10;
+    left: 43;
+	font-style: italic;
+}
+#notif_badge {
+	position: absolute;
+    top: 58;
+    left: 6;
+	padding: 0 3 0 1;
+    background-color: red;
+    color: white;
+    font-size: 10px;
+	border-radius: 2px;
+	pointer-events: none;
+	/* display: none; */
+}
+.about {
+	margin-left: 3px;
+}
 
 
 

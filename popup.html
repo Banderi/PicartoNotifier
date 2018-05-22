@@ -1,33 +1,46 @@
 <html>
 <head>
 	<title>Picarto Notifier Popup Window</title>
-	<script src="jquery.min.js"></script>
-	<script src="jquery.autocomplete.js"></script>
+	<script src="js/jquery.min.js"></script>
+	<script src="js/jquery.autocomplete.js"></script>
 	<script src="js/popup.js"></script>
+	<script src="js/jquery.colorpicker.min.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="css/colorpicker.css">
 	<link rel="stylesheet" type="text/css" href="css/popup.css">
 </head>
 <body>
 	<div class="sidebar">
-		<div class="side_btn active t_main" id="t_main">
+		<div class="side_btn t_main" id="t_main">
 			<img src="graphics\live.png" class="side_icon">
+		</div>
+		<div class="side_btn t_notifications" id="t_notifications">
+			<img src="graphics\notifications.png" class="side_icon">
+		</div>
+			<div id="notif_badge">25</div>
+		<div class="side_btn t_recordings" id="t_recordings">
+			<img src="graphics\recordings.png" class="side_icon">
 		</div>
 		<div class="side_btn t_settings" id="t_settings">
 			<img src="graphics\settings.png" class="side_icon">
 		</div>
+		<div class="side_btn t_about" id="t_about">
+			<img src="graphics\about.png" class="side_icon">
+		</div>
 	</div>
 	<div class="main">
-		<div id="t_main" class="tab t_main active">
-			<div class="submain" id="con_headings"></div>
+		<div class="tab t_main" id="t_main">
+			<div class="submain heading" id="con_headings"></div>
 			<div class="submain" id="con_live"></div>
 			<div class="submain" id="con_advanced">
 				<div class="setting">
-					<input type="checkbox" class="checkslider" id="adv_btn">
+					<input type="checkbox" class="checkslider" id="streamer">
 					<span class="setting_text">Streamer Mode</span>
 				</div>
 				
 				<div id="advanced">
-					<div id="dashboard-enabled">
-						<div class="con_dashboard">Picarto Stream Dashboard 1.02
+					<div class="dashboard-enabled dashboard_pad">
+						<div class="con_dashboard"><span style="display: none;">Picarto Stream Dashboard 1.05</span>
 							<span class="chan_mode" title="Toggle commissions" id="commissions"><i class="icon">&#xe88e;</i></span>
 							<span class="chan_mode" title="Toggle NSFW" id="nsfw"><i class="icon">&#xe800;</i></span>
 							<span class="chan_mode" title="Toggle Gamemode" id="gamemode"><i class="icon">&#xe834;</i></span>
@@ -47,23 +60,92 @@
 						<div id="ms_invites"></div>
 					</div>
 					
-					<div id="dashboard-disabled">
+					<div class="dashboard-disabled">
 						<span class="oauth-warning">You need to connect OAuth on your Picarto page to be able to use the dashboard features.</span>
-						<button type="button" class="longbutton" id="oauth_connect">Generate OAuth token</button>
+						<button class="longbutton oauth_connect">Generate OAuth token</button>
 					</div>
 					
 				</div>
 			</div>
 		</div>
 		
+		<div class="tab t_notifications" id="t_notifications">
+			<div class="submain heading streaming">Notifications</div>
+			<div class="dashboard-disabled">
+				<span class="oauth-warning">You need to connect OAuth on your Picarto page to be able to use the dashboard features.</span>
+				<button class="longbutton oauth_connect">Generate OAuth token</button>
+			</div>
+			<div class="dashboard-enabled">
+				<span class="ms_button ms_removeall" title="Mark all as read">
+					<i class="icon" id="removeall">&#xe812;</i>
+				</span>
+				<div id="con_notifications"></div>
+			</div>
+		</div>
 		
+		<div class="tab t_recordings" id="t_recordings">
+			<div class="submain heading streaming">Recordings<br><span class="setting_subtext"> Eventually....</span></div>
+			<div class="dashboard-disabled">
+				<span class="oauth-warning">You need to connect OAuth on your Picarto page to be able to use the dashboard features.</span>
+				<button class="longbutton oauth_connect">Generate OAuth token</button>
+			</div>
+			<div class="dashboard-enabled" id="con_recordings">
+			</div>
+		</div>
 		
-		
-		
-		
-		<div id="t_settings" class="tab t_settings">
+		<div class="tab t_settings" id="t_settings">
+			
+			<div class="submain">
+				<div class="setting">
+					<input type="checkbox" class="checkslider" id="notifications"><span class="setting_text">Desktop notifications</span>
+					<span class="setting_subtext">Real-time alert when people start streaming</span>
+				</div>
+				<div class="setting">
+					<input type="checkbox" class="checkslider" id="alert"><span class="setting_text">Sound notifications</span>
+					<span class="setting_subtext">Play a sound along with desktop notifications</span>
+				</div>
+				<div class="setting">
+					<input type="checkbox" class="checkslider" id="picartobar"><span class="setting_text">Disable native notifications</span>
+					<span class="setting_subtext">Automatically hide all native Picarto notifications</span>
+				</div>
+				<div class="setting">
+					<input type="checkbox" class="checkslider" id="badgenotif"><span class="setting_text">Use notifications natively</span>
+					<span class="setting_subtext">Set badge to show unread notifications and default popup to the Notifications panel</span>
+				</div>
+				<div class="setting">
+					<input type="text" class="colortext" id="badgecolor" value="#33aa33"><span class="setting_text">Notification Badge color</span>
+					<span class="setting_subtext"></span>
+				</div>
+			</div>
+			<div class="submain">
+			</div>
+			<div class="submain">
+				<div class="setting flex-center">
+					<button id="purge" class="longbutton slimbtn">Purge all settings</button>
+					<span class="setting_subtext">Remove all stored settings and cached data. When something gets bugged and extension stops working, this also can be used to avoid uninstalling and reinstalling</span>
+				</div>			
+			</div>			
 			
 		</div>
+		
+		
+		<div class="tab t_about" id="t_about">
+			<div class="submain heading streaming">Unofficial Picarto Notifier<br><span class="setting_subtext" id="version"></span></div>
+			<div class="submain">
+			</div>
+			<div class="submain">
+				<div class="setting_subtext about">
+					Unofficial real-time notifier for Picarto.TV streaming service.
+					<br><br>					
+					Main framework by Banderi/Federico Barlotti (2018) with help from <strong>Github.com/Clarvel</strong><br>
+					Color picker library by <strong>Github.com/laktek</strong><br>
+					Autocomplete library by <strong>Github.com/10w042</strong>
+					<br><br>
+					All copyrighted themes, styles, scripts and graphics are (c) Picarto.TV
+				</div>
+			</div>
+		</div>
+		
 	</div>
 </body>
 </html>
