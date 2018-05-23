@@ -1,6 +1,6 @@
 {
 	"name": "Picarto Notifier",
-	"version": "2.0.1",
+	"version": "2.0.3",
 	"manifest_version": 2,
 	"permissions": [
 		"webRequest",
@@ -41,5 +41,5 @@
 		"gecko": {
 			"id": "myextension@mydomain.com"
 		}
-	},	"key":"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlh1fBsUFpVko9VoVRCBGaIgDOWwm4kR9UuOu/azNLowakcpVbFy2H+ZhdgYgkPR5zZa3WvqQdG8b1YGehBVksfxjrT0vl5I8lUC2L1OzDeHkiBsRGh56l9N67xjUk3JHOK/Pr+jqa5EdyjvV82LprlEWzeaUmBXaQ99yxkREFoc+kQWC/nNcRGohUdlGBrWFE7oA+fQ+efxok7qWH2SL9h/JrDZDxfE/1dd1nyGnBkA6ChC7yWXqkwXBlUl3JQJjwLGfQcZT1JOTiWQRvoZEuMLa23ncjoXeUy8Bx/ddxYeAQ1vxvnPTxAYVM0ar3dvD0BkxFAmyAmxf7idXhVJAwwIDAQAB"
+	}
 }

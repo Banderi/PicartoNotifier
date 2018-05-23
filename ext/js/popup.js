@@ -292,11 +292,6 @@ function updateLive() {
 				peoplelive = true;
 			}
 			
-		}
-		
-		if (peoplelive) {
-			$('#con_headings').text("Currently streaming:");
-			$('#con_headings').addClass("streaming");
 			
 			// register the links
 			var links = $('.conn_streamer');
@@ -306,6 +301,11 @@ function updateLive() {
 					openStreamer(name);
 				});
 			});
+		}
+		
+		if (peoplelive) {
+			$('#con_headings').text("Currently streaming:");
+			$('#con_headings').addClass("streaming");
 		} else {
 			$('#con_headings').text("Nobody is currently streaming.");
 			$('#con_headings').removeClass("streaming");
