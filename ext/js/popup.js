@@ -258,14 +258,13 @@ function appendNotificationCard(name, uuid, timestamp, type) {
 	);
 }
 
-function updateLive() {
+function updateLive(callback) {
 	storage.local.get("LIVE", function(items) {
 		
 		// cache didn't change, so don't kill the DOM
 		if (JSON.stringify(livecache) === JSON.stringify(items["LIVE"])) {
 			//
 		} else {
-		
 			$('#con_live').empty();
 			
 			livecache = items["LIVE"];
@@ -283,7 +282,7 @@ function updateLive() {
 				} else {
 					recentnames.push(name);
 				}
-				storage.local.set({"RECENTNAMES" : recentnames});
+				storage.sync.set({"RECENTNAMES" : recentnames});
 				
 				
 				// add link to the window				
@@ -310,15 +309,17 @@ function updateLive() {
 			$('#con_headings').text("Nobody is currently streaming.");
 			$('#con_headings').removeClass("streaming");
 		}
+		
+		typeof callback === 'function' && callback();
 	});
 }
 
-function updateMulti() {
+function updateMulti(callback) {
 	storage.local.get("API_MULTISTREAM", function(items) {
 		
 		// cache didn't change, so don't kill the DOM
 		if (!items["API_MULTISTREAM"] || JSON.stringify(multicache) === JSON.stringify(items["API_MULTISTREAM"])) {
-			return;
+			typeof callback === 'function' && callback();
 		}
 		
 		$('#ms_invites').empty();
@@ -365,9 +366,11 @@ function updateMulti() {
 				} else {
 					recentnames.push(name);
 				}
-				storage.local.set({"RECENTNAMES" : recentnames});
+				storage.sync.set({"RECENTNAMES" : recentnames});
 			}
 		}
+		
+		typeof callback === 'function' && callback();
 	});
 }
 
@@ -817,9 +820,12 @@ function update() {
 			}
 		}
 		
-		updateLive();
+		updateLive(()=>{
+			updateMulti(()=>{
+				updateAdvanced();
+			});
+		});
 		updateMulti();
-		updateAdvanced();
 		updateNotifications();
 		updateRecordings();
 	});
@@ -841,6 +847,8 @@ let defaults = {
 	"streamer" : false,
 	"picartobar" : false,
 	"badgenotif" : false,
+	"markup" : true,
+	"updatemsg" : true,
 	"badgecolor" : "#33aa33"
 };
 
@@ -848,7 +856,8 @@ var settings = {};
 
 function getSettings(callback) {
 	settings = $.extend(true, {}, defaults);
-	storage.local.get(["SETTINGS"], (data) => {
+	
+	storage.sync.get(["SETTINGS"], (data) => {
 		for (s in data["SETTINGS"]) {
 			settings[s] = data["SETTINGS"][s];
 		}
@@ -874,11 +883,13 @@ function getSettings(callback) {
 			$("#picartobar").prop('disabled', true);
 		else
 			$("#picartobar").prop('disabled', false);
+		
+		storage.sync.get(["RECENTNAMES"], (data) => {
+			if(data["RECENTNAMES"])
+				recentnames = data["RECENTNAMES"];
+		});
 	});
-	storage.local.get(["RECENTNAMES"], (data) => {
-		if(data["RECENTNAMES"])
-			recentnames = data["RECENTNAMES"];
-	});
+	
 	storage.local.get(["OAUTH"], (data) => {
 		if(data["OAUTH"])
 			token = data["OAUTH"];
@@ -892,7 +903,7 @@ function saveSetting(setting) {
 		settings[setting] = obj[0].checked;
 	else
 		settings[setting] = obj.val();
-	storage.local.set({"SETTINGS" : settings});
+	storage.sync.set({"SETTINGS" : settings});
 	
 	let msg = {"message" : "settingChanged"};
 	msg[setting] = settings[setting];
@@ -1016,7 +1027,7 @@ $(document).ready(function() {
 		$(".dashboard-disabled").show();
 	});
 	
-	
+	// get app version
 	var manifestData = browser.runtime.getManifest();
 	$("#version").text("ver " + manifestData.version);
 });

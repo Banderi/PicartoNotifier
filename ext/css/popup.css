@@ -174,7 +174,7 @@ body {
 	-o-text-overflow: ellipsis;
 	white-space: nowrap;
 	vertical-align: middle;
-	max-width: calc(100% - 50px);
+	max-width: calc(100% - 100px);
 	margin-left: 10px;
 	width: width: 55%;
 }
@@ -186,7 +186,7 @@ body {
 	-o-text-overflow: ellipsis;
 	white-space: nowrap;
 	vertical-align: middle;
-	max-width: calc(100% - 50px);
+	max-width: calc(100% - 100px);
 	margin-left: 10px;
 	width: 62%;
 }
@@ -200,7 +200,7 @@ body {
 	border-radius: 100%;
 	padding: 5px;
 	background-color: rgba(0,0,0,0.4);
-	margin: 0 3px;
+	margin: 0 1px;
 	float: right;
 }
 .ms_acc {
@@ -211,6 +211,7 @@ body {
 }
 .ms_inv {
 	color: #4060b5;
+	display: none;
 }
 .ms_inv:hover {
 	color: #3e3e3e;
@@ -374,8 +375,8 @@ input, .chan_mode{
 input[type=checkbox].checkslider {
     position: relative;
     display: inline-block;
-    height: 20px;
-    width: 40px;
+    height: 18px;
+    width: 36px;
     -webkit-appearance: none;
     -moz-appearance: none;
     -o-appearance: none;
@@ -400,8 +401,8 @@ input[type=checkbox].checkslider:checked {
 }
 input[type=checkbox].checkslider:after {
     content: "";
-	width: 16px;
-    height: 16px;
+	width: 14px;
+    height: 14px;
     box-shadow: 0p 0 1px #f1f1f1,inset 10px 0 10px #000;
     border-radius: 100%;
     -webkit-border-radius: 100%;
@@ -417,7 +418,7 @@ input[type=checkbox].checkslider:after {
     box-shadow: 0 2px 3px 0 rgba(0,0,0,.2);
 }
 input[type=checkbox].checkslider:checked:after {
-    left: 20px;
+    left: 18px;
 }
 input[type=checkbox].checkslider:disabled {
     opacity: 0.5;
@@ -428,14 +429,14 @@ input[type=checkbox].checkslider:disabled {
 	flex-wrap: wrap;
 }
 .setting_text {
-	padding: 4px 7px;
+	padding: 3px 6px;
     font-family: verdana;
 }
 .setting_subtext {
 	font-style: italic;
     font-size: 12px;
     color: #99989c;
-    padding: 2px 0px 10px 4px;
+    padding: 2px 0px 5px 4px;
 }
 .dashboard-disabled {
 	margin-top: 4px;

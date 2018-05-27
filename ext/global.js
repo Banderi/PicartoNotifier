@@ -8,6 +8,8 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
+var motd = "Added chat Markup and update messages - fixed some minor bugs";
+
 var livecount = 0;
 var invitecount = 0;
 var ownname = "";
@@ -226,8 +228,8 @@ function updateAPI(callback) {
 							}
 							c = {};
 							storage.local.set({"API_NOTIFICATIONS" : c});
+							notifications = 0;
 						}
-						
 						
 					});
 				}
@@ -241,62 +243,10 @@ function updateAPI(callback) {
 }
 
 function updateBadge(callback) {
-	
 	browser.browserAction.setBadgeBackgroundColor( { color: settings["badgecolor"]} );
-	
-	// update badge text			
+			
 	var badgetext = "";
 	var badgetooltip = "";
-	
-	
-	// fetch multistream invites
-	if (settings["streamer"] == true) {
-		
-		if (livecount == 1) {
-			badgetext = "1";
-			badgetooltip = "1 person streaming";
-		} else if (livecount > 1) {
-			badgetext = livecount.toString();
-			badgetooltip = livecount.toString() + " people streaming";
-		} else {
-			badgetext = "";
-			badgetooltip = "";
-		}
-		if (livecount > 0) {
-			if (invitecount == 1) {
-				badgetext = badgetext + ", 1";
-				badgetooltip = badgetooltip + ", 1 invite";
-			} else if (invitecount > 1) {
-				badgetext = badgetext + ", " + invitecount.toString();
-				badgetooltip = badgetooltip + ", " + invitecount.toString() + " invites";
-			}
-		}
-		else {
-			if (invitecount == 1) {
-				badgetext = "1";
-				badgetooltip = "1 invite";
-			} else if (invitecount > 1) {
-				badgetext = invitecount.toString();
-				badgetooltip = invitecount.toString() + " invites";
-			}
-		}
-		browser.browserAction.setBadgeText({"text": badgetext});
-		browser.browserAction.setTitle({"title": badgetooltip});
-	}
-	else {		
-		if (livecount == 1) {
-			badgetext = "1";
-			badgetooltip = "1 person streaming";
-		} else if (livecount > 1) {
-			badgetext = livecount.toString();
-			badgetooltip = livecount.toString() + " people streaming";
-		} else {
-			badgetext = "";
-			badgetooltip = "";
-		}
-		browser.browserAction.setBadgeText({"text": badgetext});
-		browser.browserAction.setTitle({"title": badgetooltip});
-	}
 	
 	if(settings["badgenotif"] == true) {
 		if (notifications == 1) {
@@ -312,8 +262,79 @@ function updateBadge(callback) {
 		browser.browserAction.setBadgeText({"text": badgetext});
 		browser.browserAction.setTitle({"title": badgetooltip});
 	}
+	else {
+		if (settings["streamer"] == true) {
+			
+			if (livecount == 1) {
+				badgetext = "1";
+				badgetooltip = "1 person streaming";
+			} else if (livecount > 1) {
+				badgetext = livecount.toString();
+				badgetooltip = livecount.toString() + " people streaming";
+			} else {
+				badgetext = "";
+				badgetooltip = "";
+			}
+			if (livecount > 0) {
+				if (invitecount == 1) {
+					badgetext = badgetext + ", 1";
+					badgetooltip = badgetooltip + ", 1 invite";
+				} else if (invitecount > 1) {
+					badgetext = badgetext + ", " + invitecount.toString();
+					badgetooltip = badgetooltip + ", " + invitecount.toString() + " invites";
+				}
+			}
+			else {
+				if (invitecount == 1) {
+					badgetext = "1";
+					badgetooltip = "1 invite";
+				} else if (invitecount > 1) {
+					badgetext = invitecount.toString();
+					badgetooltip = invitecount.toString() + " invites";
+				}
+			}
+			browser.browserAction.setBadgeText({"text": badgetext});
+			browser.browserAction.setTitle({"title": badgetooltip});
+		}
+		else {		
+			if (livecount == 1) {
+				badgetext = "1";
+				badgetooltip = "1 person streaming";
+			} else if (livecount > 1) {
+				badgetext = livecount.toString();
+				badgetooltip = livecount.toString() + " people streaming";
+			} else {
+				badgetext = "";
+				badgetooltip = "";
+			}
+			browser.browserAction.setBadgeText({"text": badgetext});
+			browser.browserAction.setTitle({"title": badgetooltip});
+		}
+	}
+	
+	
 	
 	typeof callback === 'function' && callback();
+}
+
+function updateMOTD() {
+	
+	let version = browser.runtime.getManifest().version;	
+	if (settings["updatemsg"]) {
+		storage.sync.get(["MOTD"], (data) => {
+			if ((data["MOTD"] && data["MOTD"] != "" && data["MOTD"] != version) || !data["MOTD"] || data["MOTD"] == "") {
+				browser.notifications.create("MOTD", {
+					type: "basic",
+					iconUrl: "icons/icon128.png",
+					title: "Picarto Notifier updated to " + version.toString() + "!",
+					message: motd
+				}, function() {});
+			}
+			storage.sync.set({"MOTD" : version});
+		});
+	}
+	else
+		storage.sync.set({"MOTD" : version});
 }
 
 // main update function
@@ -340,6 +361,7 @@ function update() {
 			updateLive(()=>{
 				updateAPI(()=>{
 					updateBadge(()=>{
+						updateMOTD();
 						// done!
 					})
 				})
@@ -355,6 +377,8 @@ let defaults = {
 	"streamer" : false,
 	"picartobar" : false,
 	"badgenotif" : false,
+	"markup" : true,
+	"updatemsg" : true,
 	"badgecolor" : "#33aa33"
 };
 
@@ -362,7 +386,7 @@ var settings = $.extend(true, {}, defaults);
 var updater;
 
 function getSettings() {
-	storage.local.get(["SETTINGS"], (data) => {
+	storage.sync.get(["SETTINGS"], (data) => {
 		for (let a in data["SETTINGS"]) {
 			let setting = data["SETTINGS"][a];
 			settings[a] = setting;
@@ -375,7 +399,7 @@ function getSettings() {
 			update();
 			updater = setInterval(update, 5000);
 		});
-	})
+	});
 }
 
 function restart() {
@@ -390,11 +414,13 @@ var ding = new Audio('audio/ding.ogg');
 
 // add listener to the desktop notification popups
 browser.notifications.onClicked.addListener(function(notificationId) {
-	if (isDevMode()) {
-		console.log("Notification clicked! ID: " + notificationId);
+	if (notificationId !== "MOTD") {
+		if (isDevMode()) {
+			console.log("Notification clicked! ID: " + notificationId);
+		}
+		window.open('https://picarto.tv/' + notificationId, '_blank');
+		browser.notifications.clear(notificationId, function() {});
 	}
-	window.open('https://picarto.tv/' + notificationId, '_blank');
-	browser.notifications.clear(notificationId, function() {});
 });
 
 // listen for messages from other pages

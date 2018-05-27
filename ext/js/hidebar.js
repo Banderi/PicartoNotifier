@@ -10,73 +10,13 @@ function isDevMode() {
 
 // get default settings or fetch from storage
 let defaults = {
-	"picartobar" : true,
-	"streamer" : false
+	"picartobar" : false,
+	"markup" : true
 };
 
 var settings = defaults;
-var updater;
-
-storage.local.get("SETTINGS", (data) => {	
-	for (let a in data["SETTINGS"]) {
-		let setting = data["SETTINGS"][a];
-		settings[a] = setting;
-	}
-});
 
 function update() {
-	if (settings["streamer"] == true && false) {	// thanks for breaking this, Picarto
-		if (isDevMode()) {
-			/* console.log("Fetching multistream data..."); */
-		}
-		
-		var ownname = $(".usermenu_top").children().eq(1).text();
-		if (ownname != "")
-			storage.local.set({"USERNAME":ownname});
-		
-		var parse;
-		var invites = {};
-		var index = 0
-		
-		parse = $("multistream-invitation-incoming");
-		if (parse.length != 0) {
-			parse.each(function(i) {
-				var id = $(this).attr('uid');
-				var acc = $(this).attr('accepted');
-				var name = $(this).attr('channel');
-				var status = "received";
-				
-				if (acc == "true")
-					status = "attending";
-				
-				var invite_element = {"name" : name, "id" : id, "status" : status};
-				invites[index] = invite_element;
-				
-				index++;
-			});
-		}
-		parse = $("multistream-invitation-outgoing");
-		if (parse.length != 0) {
-			parse.each(function(i) {
-				var id = $(this).attr('uid');
-				var acc = $(this).attr('accepted');
-				var name = $(this).attr('channel');
-				var status = "sent";
-				
-				if (acc == "true")
-					status = "hosting";
-				
-				var invite_element = {"name" : name, "id" : id, "status" : status};
-				invites[index] = invite_element;
-				
-				index++;
-			});
-		}
-		
-		if($("multistream-modal").parent().length != 0)
-			storage.local.set({"MULTISTREAM_SESSION":invites});
-	}
-	
 	if (settings["picartobar"] == true) {
 		var s = $("#hideNotifications");
 		if (s.parent().length != 0)
@@ -86,3 +26,61 @@ function update() {
 
 update();
 var updater = setInterval(update, 1000);
+
+////
+
+var star = /\*(\S(.*?\S)?)\*/gm;
+var double_star = /\*\*(\S(.*?\S)?)\*\*/gm;
+var undersc = /\_(\S(.*?\S)?)\_/gm;
+var double_undersc = /\_\_(\S(.*?\S)?)\_\_/gm;
+var tilde = /\~(\S(.*?\S)?)\~/gm;
+var double_tilde = /\~\~(\S(.*?\S)?)\~\~/gm;
+
+function markup(str) {
+	
+	let matches = ("i>" + str).match(/[a|i|"|n]>(.*?)(?=<)/gm);
+	let nonmatches = str.match(/<(.*?)(?=[a|i|"|n]>)/gm);
+	
+	matches[0] = matches[0].substring(2);
+
+	let newstring = "";
+
+	for (i = 0; i < matches.length; i++) {
+        if( !(i+1<matches.length && matches[i+1].startsWith("a")) ) {
+            matches[i] = matches[i].replace(double_star, '<b>$1</b>');
+            matches[i] = matches[i].replace(double_undersc, '<u>$1</u>');
+            matches[i] = matches[i].replace(star, '<i>$1</i>');
+            matches[i] = matches[i].replace(undersc, '<i>$1</i>');
+            matches[i] = matches[i].replace(double_tilde, '<s>$1</s>');
+        }
+        newstring = newstring + matches[i] + nonmatches[i];
+	}
+
+    newstring += "n>";
+    return newstring;
+}
+
+$(document).ready(() => {
+	storage.sync.get("SETTINGS", (data) => {	
+		for (let a in data["SETTINGS"]) {
+			let setting = data["SETTINGS"][a];
+			settings[a] = setting;
+		}
+		
+		if (settings["markup"] == true) {
+			let targetNode = document.getElementById("chatContainer");
+			let options = {childList:true,subtree:true};
+			let observer = new MutationObserver((mutationList)=>{
+				let msgs = document.getElementsByClassName("theMsg");
+				for(let a = msgs.length-1; a >= 0; a--){
+					let m = msgs[a];
+					if(!m.classList.contains("MarkUp")){
+						m.classList.add("MarkUp");
+						m.innerHTML = markup(m.innerHTML);
+					}
+				}
+			});
+			observer.observe(targetNode, options);
+		}
+	});
+});
