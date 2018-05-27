@@ -8,7 +8,7 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
-var motd = "Added chat Markup and update messages - fixed some minor bugs";
+var motd = "Fixed some issues with the Markdown injector, cleaned up for Firefox cross-compatibility";
 
 var livecount = 0;
 var invitecount = 0;

@@ -17,7 +17,7 @@ let defaults = {
 var settings = defaults;
 
 function update() {
-	if (settings["picartobar"] == true) {
+	if (settings["picartobar"] == true && !$(".emojiPicker").is(":visible")) {
 		var s = $("#hideNotifications");
 		if (s.parent().length != 0)
 			s[0].click();
