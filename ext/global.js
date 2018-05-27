@@ -382,7 +382,8 @@ let defaults = {
 	"badgecolor" : "#33aa33"
 };
 
-var settings = $.extend(true, {}, defaults);
+var settings = {};
+settings = $.extend(true, {}, defaults);
 var updater;
 
 function getSettings() {
@@ -404,6 +405,7 @@ function getSettings() {
 
 function restart() {
 	clearInterval(updater);
+	settings = $.extend(true, {}, defaults);
 	getSettings()
 }
 

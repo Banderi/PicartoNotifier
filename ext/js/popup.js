@@ -318,8 +318,9 @@ function updateMulti(callback) {
 	storage.local.get("API_MULTISTREAM", function(items) {
 		
 		// cache didn't change, so don't kill the DOM
-		if (!items["API_MULTISTREAM"] || JSON.stringify(multicache) === JSON.stringify(items["API_MULTISTREAM"])) {
+		if (!items["API_MULTISTREAM"] || items["API_MULTISTREAM"] == "" || JSON.stringify(multicache) === JSON.stringify(items["API_MULTISTREAM"])) {
 			typeof callback === 'function' && callback();
+			return;
 		}
 		
 		$('#ms_invites').empty();
@@ -855,6 +856,7 @@ let defaults = {
 var settings = {};
 
 function getSettings(callback) {
+	settings = {};
 	settings = $.extend(true, {}, defaults);
 	
 	storage.sync.get(["SETTINGS"], (data) => {
@@ -1006,6 +1008,7 @@ $(document).ready(function() {
 	// register Purge Settings button
 	$("#purge").on("click", function() {
 		storage.local.clear();
+		storage.sync.clear();
 		getSettings();
 		let msg = {"message" : "purgeAll"};
 		browser.runtime.sendMessage(msg);
