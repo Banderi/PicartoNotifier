@@ -11,7 +11,8 @@ function isDevMode() {
 // get default settings or fetch from storage
 let defaults = {
 	"picartobar" : false,
-	"markup" : true
+	"markup" : true,
+	"maxmsg" : 0
 };
 
 var settings = defaults;
@@ -67,16 +68,25 @@ $(document).ready(() => {
 			settings[a] = setting;
 		}
 		
-		if (settings["markup"] == true) {
+		if (settings["markup"] == true || (settings["maxmsg"] && parseInt(settings["maxmsg"]) > 0)) {
 			let targetNode = document.getElementById("chatContainer");
 			let options = {childList:true,subtree:true};
 			let observer = new MutationObserver((mutationList)=>{
-				let msgs = document.getElementsByClassName("theMsg");
-				for(let a = msgs.length-1; a >= 0; a--){
-					let m = msgs[a];
-					if(!m.classList.contains("MarkUp")){
-						m.classList.add("MarkUp");
-						m.innerHTML = markup(m.innerHTML);
+				if (settings["markup"] == true) {
+					let msgs = document.getElementsByClassName("theMsg");
+					for(let a = msgs.length-1; a >= 0; a--){
+						let m = msgs[a];
+						if(!m.classList.contains("MarkUp")){
+							m.classList.add("MarkUp");
+							m.innerHTML = markup(m.innerHTML);
+						}
+					}
+				}
+				if (settings["maxmsg"] && parseInt(settings["maxmsg"]) > 0) {
+					let msgc = document.querySelectorAll('#msgs li');
+					while (msgc.length > settings["maxmsg"]) {
+						msgc[0].remove();
+						msgc = document.querySelectorAll('#msgs li');
 					}
 				}
 			});

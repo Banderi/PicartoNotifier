@@ -8,7 +8,7 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
-var motd = "Fixed some issues with the Markdown injector, cleaned up for Firefox cross-compatibility";
+var motd = "Added Markdown markup for stream chats and message limiter";
 
 var livecount = 0;
 var invitecount = 0;
@@ -102,9 +102,17 @@ function loggedintest() {
 	$.ajax({
 		url: "https://picarto.tv/settings/multistream",
 		success: function(data) {
-			if (isDevMode()) {
-				console.log("Yup, user is not logged in!");
-			}
+			
+			$.post("https://picarto.tv/process/explore", {follows: true}).done(function(data) {
+				exploreData = JSON.parse(data);
+				if (exploreData[0] && exploreData[0].error == "notLoggedin") {
+					if (isDevMode()) {
+						console.log("Yup, user is not logged in!");
+					}
+					storage.local.clear();
+					storage.local.set({"USERNAME" : false});
+				}
+			});
 		},
 		error: function() {
 			console.log("Whoops. AJAX on Picarto failed!");
@@ -152,7 +160,7 @@ function updateLive(callback) {
 			for (i in exploreData) {
 				
 				// got a match! cache will be updated and name will be remembered
-				if (name === exploreData[i].channel_name) {
+				if (exploreData[i].channel_name && name === exploreData[i].channel_name) {
 					
 					exploreData[i]["old"] = true;
 					user["live"] = true;
@@ -218,7 +226,7 @@ function updateAPI(callback) {
 							notifications = c.length;
 						else
 							notifications = 0;
-						updateBadge();
+						
 						storage.local.set({"API_NOTIFICATIONS" : c});
 						
 						// automatically remove notifications if setting is enabled
@@ -235,9 +243,14 @@ function updateAPI(callback) {
 				}
 			});
 			getAPI("user/multistream", function(b) {
+				if (b["incoming"])
+					invitecount = b["incoming"].length;
+				else
+					invitecount = 0;
 				storage.local.set({"API_MULTISTREAM" : b});
 			});
 		}
+		updateBadge();
 	});
 	typeof callback === 'function' && callback();
 }
@@ -322,11 +335,11 @@ function updateMOTD() {
 	let version = browser.runtime.getManifest().version;	
 	if (settings["updatemsg"]) {
 		storage.sync.get(["MOTD"], (data) => {
-			if ((data["MOTD"] && data["MOTD"] != "" && data["MOTD"] != version) || !data["MOTD"] || data["MOTD"] == "") {
+			if ((data["MOTD"] && data["MOTD"] != "" && data["MOTD"].split('.').slice(0,2).join(".") != version.split('.').slice(0,2).join(".")) || !data["MOTD"] || data["MOTD"] == "") {
 				browser.notifications.create("MOTD", {
 					type: "basic",
 					iconUrl: "icons/icon128.png",
-					title: "Picarto Notifier updated to " + version.toString() + "!",
+					title: "Picarto Notifier updated to " + version.toString().substr(0, 3) + "!",
 					message: motd
 				}, function() {});
 			}
@@ -351,8 +364,7 @@ function update() {
 				loggedintest();
 			}
 			else {
-				storage.local.clear();
-				storage.local.set({"USERNAME" : false});
+				//
 			}
 		}
 		else {
@@ -379,6 +391,7 @@ let defaults = {
 	"badgenotif" : false,
 	"markup" : true,
 	"updatemsg" : true,
+	"maxmsg" : "0",
 	"badgecolor" : "#33aa33"
 };
 

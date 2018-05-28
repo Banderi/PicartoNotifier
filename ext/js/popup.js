@@ -850,6 +850,7 @@ let defaults = {
 	"badgenotif" : false,
 	"markup" : true,
 	"updatemsg" : true,
+	"maxmsg" : "0",
 	"badgecolor" : "#33aa33"
 };
 
@@ -968,9 +969,16 @@ $(document).ready(function() {
 		if (s == "badgecolor")
 			continue;
 		let obj = $("#" + s);
-		obj.on("click", function() {
-			saveSetting(setting);
-		});
+		if (s == "maxmsg") {
+			obj.on("input", function() {
+				saveSetting(setting);
+			});
+		}
+		else {
+			obj.on("click", function() {
+				saveSetting(setting);
+			});
+		}
 	}
 	
 	// register streamer mode button
