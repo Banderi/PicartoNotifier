@@ -1,6 +1,6 @@
 {
 	"name": "Picarto Notifier",
-	"version": "2.1.4",
+	"version": "2.2.0",
 	"manifest_version": 2,
 	"permissions": [
 		"webRequest",

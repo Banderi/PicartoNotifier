@@ -8,7 +8,7 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
-var motd = "Added Markdown markup for stream chats and message limiter";
+var motd = "Added new tab for useful Picarto hacks/fixes";
 
 var livecount = 0;
 var invitecount = 0;
