@@ -389,10 +389,12 @@ let defaults = {
 	"streamer" : false,
 	"picartobar" : false,
 	"badgenotif" : false,
-	"markup" : true,
 	"updatemsg" : true,
+	"badgecolor" : "#33aa33",
+	"markup" : true,
 	"maxmsg" : "0",
-	"badgecolor" : "#33aa33"
+	"fullscreenfix" : true,
+	"expandstrm" : true
 };
 
 var settings = {};
