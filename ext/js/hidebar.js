@@ -26,9 +26,16 @@ function update() {
 			if (s.parent().length != 0)
 				s[0].click();
 		}
-		if (settings["fullscreenfix"] == true && !$(".vjs-menu-item").eq(5).hasClass("vjs-selected"))
-			$(".vjs-menu-item").eq(5).click();
+		if (settings["fullscreenfix"] == true) {
+			$(".vjs-menu").each(function(){
+				let e = $(this).find(".vjs-menu-item").eq(5)
+				if (!e.hasClass("vjs-selected"))
+					e.click();
+			});
+		}
 		if (settings["expandstrm"] == true) {
+			if ($(".userbar-multistream-hover-target").children().length < 2)
+				return;
 			$.each($('.vjs-menu-button.vjs-control.vjs-button'), function() {
 				let e = $(this);
 				if (!e.prev().hasClass("vjs-expand-button")) {
@@ -84,7 +91,7 @@ function expand(name) {
 	let parse = $(".fa-expand-alt");
 	$.each(parse, function() {
 		let e = $(this);
-		if (e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
+		if (e.parent().parent().attr("name") && e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
 			e.click();
 			return false;
 		}
@@ -96,7 +103,7 @@ function collapse(name) {
 	let parse = $(".fa-compress-alt");
 	$.each(parse, function() {
 		let e = $(this);
-		if (e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
+		if (e.parent().parent().attr("name") && e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
 			e.click();
 			return false;
 		}
@@ -108,7 +115,7 @@ function hide(name) {
 	let parse = $(".fa-times-square");
 	$.each(parse, function() {
 		let e = $(this);
-		if (e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
+		if (e.parent().parent().attr("name") && e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
 			e.click();
 			return false;
 		}
@@ -118,7 +125,7 @@ function show(name) {
 	let parse = $(".fa-plus-square");
 	$.each(parse, function() {
 		let e = $(this);
-		if (e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
+		if (e.parent().parent().attr("name") && e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
 			e.click();
 			return false;
 		}
@@ -157,41 +164,73 @@ function addButtons(e) {
 	);
 }
 
+/* function postEmoji(alt) {
+	let chat = $("#msg")[0];
+	var shift = chat.selectionStart + alt.length;
+	chat.value = chat.value.substring(0, chat.selectionStart) + alt + chat.value.substring(chat.selectionEnd);
+	chat.selectionStart = chat.selectionEnd = shift;
+    chat.focus();
+} */
+
 $(document).ready(() => {
 	
-	var styleTag = $('<style>.vjs-button { outline: none !important; cursor: pointer;}</style>');
-	$('html > head').append(styleTag);;
+	var styleTag = $(`
+			<style>
+			.vjs-button {
+				outline: none !important;
+				cursor: pointer;
+			}
+			.pnt_quick_emotes {
+				position: absolute;
+				background: black;
+				width: 40px;
+				height: 100px;
+				bottom: 40px;
+			}
+			</style>
+		`);
+	$('html > head').append(styleTag);
 	
-	
-	storage.sync.get("SETTINGS", (data) => {	
+	storage.sync.get("SETTINGS", (data) => {
 		for (let a in data["SETTINGS"]) {
 			let setting = data["SETTINGS"][a];
 			settings[a] = setting;
 		}
 		
-		if (settings["markup"] == true || (settings["maxmsg"] && parseInt(settings["maxmsg"]) > 0)) {
-			let targetNode = document.getElementById("chatContainer");
-			let options = {childList:true,subtree:true};
-			let observer = new MutationObserver((mutationList)=>{
-				if (settings["markup"] == true) {
-					let msgs = document.getElementsByClassName("theMsg");
-					for(let a = msgs.length-1; a >= 0; a--){
-						let m = msgs[a];
-						if(!m.classList.contains("MarkUp")){
-							m.classList.add("MarkUp");
-							m.innerHTML = markup(m.innerHTML);
-						}
+		/* if (settings["quickemotes"]) {
+			$("#chat_extras_btn").parent().append($('<div/>', {'class': 'pnt_quick_emotes', 'id' : 'pnt_quick_emotes'}));
+		} */
+		
+		let targetNode = document.getElementById("chatContainer");
+		let options = {childList:true,subtree:true};
+		let observer = new MutationObserver((mutationList)=>{
+			if (settings["markup"] == true) {
+				let msgs = document.getElementsByClassName("theMsg");
+				for(let a = msgs.length-1; a >= 0; a--){
+					let m = msgs[a];
+					if(!m.classList.contains("MarkUp")){
+						m.classList.add("MarkUp");
+						m.innerHTML = markup(m.innerHTML);
 					}
 				}
-				if (settings["maxmsg"] && parseInt(settings["maxmsg"]) > 0) {
-					let msgc = document.querySelectorAll('#msgs li');
-					while (msgc.length > settings["maxmsg"]) {
-						msgc[0].remove();
-						msgc = document.querySelectorAll('#msgs li');
-					}
+			}
+			
+			let msgc = $("#msgs li");
+			let msgu = msgc.not("[class]");
+			
+			while (msgu.length > 1) {
+				msgu[0].remove();
+				msgc = $("#msgs li");
+				msgu = msgc.not("[class]");
+			}
+			
+			if (settings["maxmsg"] && parseInt(settings["maxmsg"]) > 0) {
+				while (msgc.length > settings["maxmsg"]) {
+					msgc[0].remove();
+					msgc = $("#msgs li");
 				}
-			});
-			observer.observe(targetNode, options);
-		}
+			}
+		});
+		observer.observe(targetNode, options);
 	});
 });

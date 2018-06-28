@@ -475,6 +475,17 @@ input[type=checkbox].checkslider:disabled {
     -moz-transition: all .1s ease;
     -o-transition: all .1s ease;
 }
+.longbutton.yellow {
+	background-color: #5ad432;
+    border-color: #5ad432;
+    height: 25px;
+    font-size: 13;
+    margin-top: 4px;
+    border-radius: 9px;
+    -webkit-border-radius: 9px;
+    -moz-border-radius: 9px;
+    -o-border-radius: 9px;
+}
 .longbutton:hover {
 	opacity: 1;
 }
@@ -489,6 +500,22 @@ input[type=checkbox].checkslider:disabled {
     height: 25;
     font-size: 13;
     padding: 0px 10px 0px 10px;
+}
+.input-group.oauthtoken {
+	padding: 3 0 1 0;
+	transition: all .1s ease-out;
+	-webkit-transition: all .1s ease-out;
+    -moz-transition: all .1s ease-out;
+    -o-transition: all .1s ease-out;
+}
+.input-group-addon.oauthtoken {
+	padding: 0 6 0 10;
+}
+.clicked, .input-group-addon.clicked {
+	background-color: #3d7f2b;
+}
+.nooutline {
+	outline: none;
 }
 .numberbox {
 	height: 20px;

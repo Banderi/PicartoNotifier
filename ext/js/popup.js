@@ -113,7 +113,7 @@ async function postAPI(url, callback) {
 		contentType: "application/json; charset=utf-8",
 		cache: false,
 		beforeSend: function (xhr) {
-			xhr.setRequestHeader("Authorization", token);
+			xhr.setRequestHeader("Authorization", "Bearer " + token);
 		},
 		success: function (data) {
 			/* console.log("woo!"); */
@@ -896,11 +896,14 @@ function getSettings(callback) {
 	});
 	
 	storage.local.get(["OAUTH"], (data) => {
-		if(data["OAUTH"])
+		if(data["OAUTH"]) {
 			token = data["OAUTH"];
+			$("#oauthtoken").val(token);
+		}
 	});
 }
 getSettings();
+
 
 function saveSetting(setting) {
 	let obj = $("#" + setting);
@@ -983,6 +986,21 @@ $(document).ready(function() {
 		}
 	}
 	
+	// register OAuth override box
+	$("#oauthhidden").hide();
+	$("#oauthshow").on("click", function() {
+		$("#oauthhidden").toggle();
+	});
+	$("#oauthconfirm").on("click", function() {
+		token = $("#oauthtoken").val();
+		storage.local.set({"OAUTH" : token});
+		
+		$("#oauthconfirm").addClass("clicked");
+		setTimeout(function() {
+			$("#oauthconfirm").removeClass("clicked");
+		}, 100);
+	});
+	
 	// register streamer mode button
 	$("#streamer").on("click", function() {
 		saveSetting("streamer");
@@ -1013,6 +1031,18 @@ $(document).ready(function() {
 			$(".ms_inv").show();
 			getSettings();
 		});
+	});
+	$(".oauth_manual").on("click", function() {
+		$(".side_btn").removeClass("active");
+		$(".tab").removeClass("active");
+		$(".t_settings").addClass("active");
+		$("#oauthshow")[0].checked = true;
+		setTimeout(function() { $("#oauthtoken").get(0).focus(); }, 100);
+		$("#oauthhidden").show();
+		$("#oauthhidden").addClass("clicked");
+		setTimeout(function() {
+			$("#oauthhidden").removeClass("clicked");
+		}, 500);
 	});
 	
 	// register Purge Settings button

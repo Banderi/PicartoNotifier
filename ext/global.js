@@ -8,7 +8,7 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
-var motd = "Added new tab for useful Picarto hacks/fixes";
+var motd = "Added OAuth override, fixed some minor stuff";
 
 var livecount = 0;
 var invitecount = 0;
@@ -34,7 +34,7 @@ function OAuthConnect(interactive = false, callback) {
 		console.log("Redirect received! Parsing...");
 		if (parsed) {
 			console.log("Logged in!");
-			token = "Bearer " + parsed[1];
+			token = parsed[1];
 			storage.local.set({"OAUTH" : token});
 			
 			typeof callback === 'function' && callback();
@@ -51,25 +51,29 @@ function OAuthConnect(interactive = false, callback) {
 
 
 async function getAPI(url, callback) {
-	await $.ajax({
-		url: "https://api.picarto.tv/v1/" + url,
-		method: "GET",
-		dataType: "json",
-		crossDomain: true,
-		contentType: "application/json; charset=utf-8",
-		cache: false,
-		beforeSend: function (xhr) {
-			xhr.setRequestHeader("Authorization", token);
-		},
-		success: function (data) {
-			/* console.log("woo!"); */
-			
-			typeof callback === 'function' && callback(data);
-		},
-		error: function (jqXHR, textStatus, errorThrown) {
-			console.log("darn");
-		}
-	});
+	try {
+		await $.ajax({
+			url: "https://api.picarto.tv/v1/" + url,
+			method: "GET",
+			dataType: "json",
+			crossDomain: true,
+			contentType: "application/json; charset=utf-8",
+			cache: false,
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader("Authorization", "Bearer " + token);
+			},
+			success: function (data) {
+				/* console.log("woo!"); */
+				
+				typeof callback === 'function' && callback(data);
+			},
+			error: function (jqXHR, textStatus, errorThrown) {
+				console.log(jqXHR.responseText);
+			}
+		});
+	} catch (e) {
+		//
+	}
 }
 
 async function postAPI(url, callback) {
@@ -80,7 +84,7 @@ async function postAPI(url, callback) {
 		contentType: "application/json; charset=utf-8",
 		cache: false,
 		beforeSend: function (xhr) {
-			xhr.setRequestHeader("Authorization", token);
+			xhr.setRequestHeader("Authorization", "Bearer " + token);
 		},
 		success: function (data) {
 			/* console.log("woo!"); */
@@ -210,8 +214,17 @@ function updateLive(callback) {
 function updateAPI(callback) {
 	
 	storage.local.get(["OAUTH"], (data) => {
-		if (data["OAUTH"])
+		if (data["OAUTH"]) {
 			token = data["OAUTH"];
+			if (token.indexOf(' ') != -1) {
+				token = token.substr(token.indexOf(' ') + 1);
+				storage.local.set({"OAUTH" : token});
+			}
+			if (IsNullOrWhiteSpace(token)) {
+				token = "";
+				storage.local.remove("OAUTH");
+			}
+		}
 		if (token) {
 			storage.local.get(["CACHESTAMP"], (data) => {
 				if (data["CACHESTAMP"] && Date.now() < data["CACHESTAMP"] + 15000) {

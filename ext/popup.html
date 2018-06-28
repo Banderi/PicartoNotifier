@@ -67,6 +67,7 @@
 					<div class="dashboard-disabled">
 						<span class="oauth-warning">You need to connect OAuth on your Picarto page to be able to use the dashboard features.</span>
 						<button class="longbutton oauth_connect">Generate OAuth token</button>
+						<button class="longbutton yellow oauth_manual">Add a token manually</button>
 					</div>
 					
 				</div>
@@ -78,6 +79,7 @@
 			<div class="dashboard-disabled">
 				<span class="oauth-warning">You need to connect OAuth on your Picarto page to be able to use the dashboard features.</span>
 				<button class="longbutton oauth_connect">Generate OAuth token</button>
+				<button class="longbutton yellow oauth_manual">Add a token manually</button>
 			</div>
 			<div class="dashboard-enabled">
 				<span class="ms_button ms_removeall" title="Mark all as read">
@@ -92,6 +94,7 @@
 			<div class="dashboard-disabled">
 				<span class="oauth-warning">You need to connect OAuth on your Picarto page to be able to use the dashboard features.</span>
 				<button class="longbutton oauth_connect">Generate OAuth token</button>
+				<button class="longbutton yellow oauth_manual">Add a token manually</button>
 			</div>
 			<div class="dashboard-enabled" id="con_recordings">
 			</div>
@@ -127,6 +130,13 @@
 				</div> -->
 				
 				<div class="setting">
+					<input type="checkbox" class="checkslider" id="oauthshow"><span class="setting_text">Show OAuth token</span>
+					<div id="oauthhidden" class="input-group oauthtoken">
+						<input type="textbox" class="form-control nooutline" id="oauthtoken" spellcheck="false"><span class="input-group-addon btnBase Dark displayCell oauthtoken" id="oauthconfirm">Save</button>
+					</div>
+					<span class="setting_subtext">Manually edit or clear the OAuth token</span>
+				</div>
+				<div class="setting">
 					<input type="text" class="colortext" id="badgecolor" value="#33aa33"><span class="setting_text">Notification Badge color</span>
 					<span class="setting_subtext"></span>
 				</div>
@@ -160,7 +170,7 @@
 				</div>
 				<div class="setting">
 					<input type="checkbox" class="checkslider" id="fullscreenfix"><span class="setting_text">Fix fullscreen</span>
-					<span class="setting_subtext">Sets player to HTS automatically (on Chrome) to fix fullscreen reloading the stream</span>
+					<span class="setting_subtext">Set player to HTS automatically (on Chrome) to fix fullscreen reloading the stream</span>
 				</div>
 			</div>
 			
