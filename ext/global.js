@@ -26,6 +26,10 @@ var crxID = "fifjhakdmflgahkghkijipchfomdajfn"
 var picartoURL = "https://oauth.picarto.tv/authorize?redirect_uri=" + redirectURI + "&response_type=token&scope=readpub readpriv write&state=OAuth2Implicit&client_id=" + picartoClientID
 var tokenRegex = RegExp("[&#]access_token=(.+?)(?:&|$)")
 
+function IsNullOrWhitespace( input ) {
+  return !input || !input.trim();
+}
+
 function OAuthConnect(interactive = false, callback) {
 	console.log("Parsing oauth...");
 	console.log("Redirect URI: " + redirectURI);
@@ -220,7 +224,7 @@ function updateAPI(callback) {
 				token = token.substr(token.indexOf(' ') + 1);
 				storage.local.set({"OAUTH" : token});
 			}
-			if (IsNullOrWhiteSpace(token)) {
+			if (IsNullOrWhitespace(token)) {
 				token = "";
 				storage.local.remove("OAUTH");
 			}
