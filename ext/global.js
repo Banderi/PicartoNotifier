@@ -411,7 +411,8 @@ let defaults = {
 	"markup" : true,
 	"maxmsg" : "0",
 	"fullscreenfix" : true,
-	"expandstrm" : true
+	"expandstrm" : true,
+	"norefer" : true
 };
 
 var settings = {};

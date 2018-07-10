@@ -14,7 +14,8 @@ let defaults = {
 	"markup" : true,
 	"maxmsg" : 0,
 	"fullscreenfix" : true,
-	"expandstrm" : true
+	"expandstrm" : true,
+	"norefer" : true
 };
 
 var settings = defaults;
@@ -85,6 +86,14 @@ function markup(str) {
 
     newstring += "n>";
     return newstring;
+}
+
+/* linkfix(str) {	
+	return decodeURIComponent(str.replace("https://picarto.tv/site/referrer?go=", "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"'));
+} */
+
+function replaceAll(str, find, replace) {
+    return str.replace(new RegExp(find, 'g'), replace);
 }
 
 function expand(name) {
@@ -204,13 +213,27 @@ $(document).ready(() => {
 		let targetNode = document.getElementById("chatContainer");
 		let options = {childList:true,subtree:true};
 		let observer = new MutationObserver((mutationList)=>{
-			if (settings["markup"] == true) {
+			if (settings["markup"] == true || settings["norefer"] == true) {
 				let msgs = document.getElementsByClassName("theMsg");
-				for(let a = msgs.length-1; a >= 0; a--){
+				for (let a = msgs.length-1; a >= 0; a--) {
 					let m = msgs[a];
-					if(!m.classList.contains("MarkUp")){
+					
+					if (!m.classList.contains("MarkUp") && settings["markup"] == true) {
 						m.classList.add("MarkUp");
 						m.innerHTML = markup(m.innerHTML);
+					}
+					if (!m.classList.contains("LinkFix") && settings["norefer"] == true) {
+						m.classList.add("LinkFix");
+						
+						/* let lf = m.innerHTML.match(/href(.+?)\" target\=\"\_blank\"/g)[0];
+						lf = lf.replace('href="', '');
+						lf = lf.replace('" target="_blank"', ''); */
+						
+						m.innerHTML
+						
+						m.innerHTML = decodeURIComponent(m.innerHTML.replace(/https\:\/\/picarto\.tv\/site\/referrer\?go\=/g, "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"'));
+						
+						//m.innerHTML = m.innerHTML.replace(lf, linkfix(lf));
 					}
 				}
 			}
