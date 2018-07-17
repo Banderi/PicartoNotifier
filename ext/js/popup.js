@@ -854,7 +854,7 @@ let defaults = {
 	"maxmsg" : "0",
 	"fullscreenfix" : true,
 	"expandstrm" : true,
-	"norefer" : true
+	"norefer" : true
 };
 
 var settings = {};

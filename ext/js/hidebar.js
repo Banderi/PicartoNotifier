@@ -211,8 +211,8 @@ $(document).ready(() => {
 		} */
 		
 		let targetNode = document.getElementById("chatContainer");
-		let options = {childList:true,subtree:true};
-		let observer = new MutationObserver((mutationList)=>{
+		let options = {childList: true, subtree: true};
+		let observer = new MutationObserver((mutationList) => {
 			if (settings["markup"] == true || settings["norefer"] == true) {
 				let msgs = document.getElementsByClassName("theMsg");
 				for (let a = msgs.length-1; a >= 0; a--) {
@@ -255,5 +255,16 @@ $(document).ready(() => {
 			}
 		});
 		observer.observe(targetNode, options);
+		
+		/* if(settings["cleantab"] == true) */
+		targetNode = document.querySelector('head > title');
+		options = {subtree: true, characterData: true, childList: true};
+		let observer2 = new MutationObserver((mutationList) => {
+			if (document.title.includes("[LIVE]")) {
+				document.title = document.title.replace("[LIVE]", "");
+				document.title = document.title.replace("- Picarto", " (\u25B6) - Picarto");
+			}
+		});
+		observer2.observe(targetNode, options);
 	});
 });
