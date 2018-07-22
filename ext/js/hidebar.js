@@ -28,10 +28,12 @@ function update() {
 				s[0].click();
 		}
 		if (settings["fullscreenfix"] == true) {
-			$(".vjs-menu").each(function(){
-				let e = $(this).find(".vjs-menu-item").eq(5)
-				if (!e.hasClass("vjs-selected"))
-					e.click();
+			$(".vjs-menu.vjs-settings-menu").each(function(){
+				$(this).children().eq(2).find(".vjs-menu-item").each(function(){
+					let e = $(this);
+					if (e.find("span").eq(0).text() == "HLS" && !e.hasClass("vjs-selected"))
+						e.click();
+				});
 			});
 		}
 		if (settings["expandstrm"] == true) {
