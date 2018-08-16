@@ -90,19 +90,20 @@ function markup(str) {
     return newstring;
 }
 
-/* linkfix(str) {	
-	return decodeURIComponent(str.replace("https://picarto.tv/site/referrer?go=", "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"'));
-} */
-
 function replaceAll(str, find, replace) {
     return str.replace(new RegExp(find, 'g'), replace);
+}
+
+function buttParentName(e) {
+	return e.parent().parent().parent().attr("name");
 }
 
 function expand(name) {
 	let parse = $(".fa-expand-alt");
 	$.each(parse, function() {
 		let e = $(this);
-		if (e.parent().parent().attr("name") && e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
+		let n = buttParentName(e);
+		if (n && n.toLowerCase() === name.toLowerCase()) {
 			e.click();
 			return false;
 		}
@@ -114,7 +115,8 @@ function collapse(name) {
 	let parse = $(".fa-compress-alt");
 	$.each(parse, function() {
 		let e = $(this);
-		if (e.parent().parent().attr("name") && e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
+		let n = buttParentName(e);
+		if (n && n.toLowerCase() === name.toLowerCase()) {
 			e.click();
 			return false;
 		}
@@ -126,7 +128,8 @@ function hide(name) {
 	let parse = $(".fa-times-square");
 	$.each(parse, function() {
 		let e = $(this);
-		if (e.parent().parent().attr("name") && e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
+		let n = buttParentName(e);
+		if (n && n.toLowerCase() === name.toLowerCase()) {
 			e.click();
 			return false;
 		}
@@ -136,7 +139,8 @@ function show(name) {
 	let parse = $(".fa-plus-square");
 	$.each(parse, function() {
 		let e = $(this);
-		if (e.parent().parent().attr("name") && e.parent().parent().attr("name").toLowerCase() === name.toLowerCase()) {
+		let n = buttParentName(e);
+		if (n && n.toLowerCase() === name.toLowerCase()) {
 			e.click();
 			return false;
 		}
@@ -144,10 +148,10 @@ function show(name) {
 }
 
 function addButtons(e) {
-	let name = e.parents(".position-relative.animateAll").children().eq(0).attr("channel");
+	let name = e.parents(".position-relative.animateAll").children().closest("picarto-player").attr("channel");
 	e.before(
 		$('<div/>', {'class': 'vjs-hide-button vjs-control vjs-button', 'title' : 'Hide'}).append(
-			$('<button/>', {'class': 'vjs-hide-button vjs-menu-button-popup vjs-settings-button fa fa-times-square vjs-button'}).append(
+			$('<button/>', {'class': 'vjs-hide-button vjs-menu-button vjs-menu-button-popup vjs-settings-button fa fa-times-square vjs-button'}).append(
 				$('<span/>', {'class': 'vjs-control-text'}).text("Hide")
 			)
 		).on("click", function() {
@@ -156,7 +160,7 @@ function addButtons(e) {
 		})
 	).before(
 		$('<div/>', {'class': 'vjs-collapse-button vjs-control vjs-button', 'title' : 'Collapse'}).append(
-			$('<button/>', {'class': 'vjs-collapse-button vjs-menu-button-popup vjs-settings-button fa fa-compress-alt vjs-button'}).append(
+			$('<button/>', {'class': 'vjs-collapse-button vjs-menu-button vjs-menu-button-popup vjs-settings-button fa fa-compress-alt vjs-button'}).append(
 				$('<span/>', {'class': 'vjs-control-text'}).text("Collapse")
 			)
 		).on("click", function() {
@@ -165,7 +169,7 @@ function addButtons(e) {
 		})
 	).before(
 		$('<div/>', {'class': 'vjs-expand-button vjs-control vjs-button', 'title' : 'Expand'}).append(
-			$('<button/>', {'class': 'vjs-expand-button vjs-menu-button-popup vjs-settings-button fa fa-expand-alt vjs-button'}).append(
+			$('<button/>', {'class': 'vjs-expand-button vjs-menu-button vjs-menu-button-popup vjs-settings-button fa fa-expand-alt vjs-button'}).append(
 				$('<span/>', {'class': 'vjs-control-text'}).text("Expand")
 			)
 		).on("click", function() {
@@ -231,8 +235,6 @@ $(document).ready(() => {
 						lf = lf.replace('href="', '');
 						lf = lf.replace('" target="_blank"', ''); */
 						
-						m.innerHTML
-						
 						m.innerHTML = decodeURIComponent(m.innerHTML.replace(/https\:\/\/picarto\.tv\/site\/referrer\?go\=/g, "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"'));
 						
 						//m.innerHTML = m.innerHTML.replace(lf, linkfix(lf));
@@ -257,16 +259,5 @@ $(document).ready(() => {
 			}
 		});
 		observer.observe(targetNode, options);
-		
-		/* if(settings["cleantab"] == true) */
-		targetNode = document.querySelector('head > title');
-		options = {subtree: true, characterData: true, childList: true};
-		let observer2 = new MutationObserver((mutationList) => {
-			if (document.title.includes("[LIVE]")) {
-				document.title = document.title.replace("[LIVE]", "");
-				document.title = document.title.replace("- Picarto", " (\u25B6) - Picarto");
-			}
-		});
-		observer2.observe(targetNode, options);
 	});
 });
