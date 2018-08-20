@@ -242,19 +242,19 @@ $(document).ready(() => {
 				}
 			}
 			
-			let msgc = $("#msgs div");
+			let msgc = $("#msgs").children();
 			let msgu = msgc.not("[class]");
 			
 			while (msgu.length > 1) {
 				msgu[0].remove();
-				msgc = $("#msgs div");
+				msgc = $("#msgs").children();
 				msgu = msgc.not("[class]");
 			}
 			
 			if (settings["maxmsg"] && parseInt(settings["maxmsg"]) > 0) {
 				while (msgc.length > settings["maxmsg"]) {
 					msgc[0].remove();
-					msgc = $("#msgs div");
+					msgc = $("#msgs").children();
 				}
 			}
 		});
