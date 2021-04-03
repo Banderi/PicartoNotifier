@@ -8,7 +8,7 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
-var motd = "Fixed for new bloody layout";
+var motd = "Fixed for new goddamn layout";
 
 var livecount = 0;
 var invitecount = 0;
@@ -28,6 +28,16 @@ var tokenRegex = RegExp("[&#]access_token=(.+?)(?:&|$)")
 
 function IsNullOrWhitespace( input ) {
   return !input || !input.trim();
+}
+
+function getCookies(domain, name, callback) {
+	if (!browser.cookies) {
+		browser.cookies = browser.experimental.cookies;
+	}
+	browser.cookies.get({"url": domain, "name": name}, function(cookie) {
+		if(callback)
+			callback(cookie.value);
+	});
 }
 
 function OAuthConnect(interactive = false, callback) {
@@ -52,8 +62,6 @@ function OAuthConnect(interactive = false, callback) {
 		}
 	});
 }
-
-
 async function getAPI(url, callback) {
 	try {
 		await $.ajax({
@@ -79,7 +87,6 @@ async function getAPI(url, callback) {
 		//
 	}
 }
-
 async function postAPI(url, callback) {
 	await $.ajax({
 		url: "https://api.picarto.tv/v1/" + url,
@@ -214,7 +221,6 @@ function updateLive(callback) {
 		});	
 	});
 }
-
 function updateAPI(callback) {
 	
 	storage.local.get(["OAUTH"], (data) => {
@@ -271,7 +277,6 @@ function updateAPI(callback) {
 	});
 	typeof callback === 'function' && callback();
 }
-
 function updateBadge(callback) {
 	browser.browserAction.setBadgeBackgroundColor( { color: settings["badgecolor"]} );
 			
@@ -346,9 +351,7 @@ function updateBadge(callback) {
 	
 	typeof callback === 'function' && callback();
 }
-
 function updateMOTD() {
-	
 	let version = browser.runtime.getManifest().version;	
 	if (settings["updatemsg"]) {
 		storage.sync.get(["MOTD"], (data) => {
@@ -367,8 +370,7 @@ function updateMOTD() {
 		storage.sync.set({"MOTD" : version});
 }
 
-
-function scrapeConnectionsPage() {
+function scrapeConnectionsPage() { // completely broken, past code snippet only here for future potential usage
 	// get multistream data
 	$.ajax({
 		url: "https://picarto.tv/settings/connections/following",
@@ -412,34 +414,12 @@ function scrapeConnectionsPage() {
 	});
 }
 
-function getCookies(domain, name, callback) {
-		
-		if (!browser.cookies) {
-			browser.cookies = browser.experimental.cookies;
-		}
+// main update function
+function update() {
 	
-		browser.cookies.get({"url": domain, "name": name}, function(cookie) {
-			if(callback) {
-				callback(cookie.value);
-			}
-		});
-	}
-function internalAPIupdate() {
-
+	// first, fetch auth bearer token from cookies
 	getCookies("https://picarto.tv", "ptv_auth", function(a) {
 		let auth_bear = "Bearer " + (JSON.parse(a)["access_token"])
-		/* console.log(auth_bear); */
-		/* return; */
-	
-		/* let querytosend = {
-			query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    notification\n    online\n    __typename\n  }\n}\n",
-			variables: {
-				"first": 20,
-				"page": 1,
-				"q": ""
-			}
-		} */
-		
 		let querytosend = {
 			query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    __typename\n  }\n}\n",
 			variables: {
@@ -448,13 +428,6 @@ function internalAPIupdate() {
 				"q": ""
 			}
 		}
-		
-		/* querytosend = {
-			query: "query ($name: String) {\n  me {\n    id\n    is_admin\n    channel {\n      id\n      account_type\n      avatar_url\n      name\n      __typename\n    }\n    __typename\n  }\n  getLoadBalancerUrl(channel_name: $name) {\n    url\n    origin\n    __typename\n  }\n}\n",
-			variables: {
-				"name": "Banderi"
-			}
-		} */
 		
 		$.ajax({
 			url: "https://ptvintern.picarto.tv/ptvapi",
@@ -475,8 +448,6 @@ function internalAPIupdate() {
 						delete parse[i];
 						continue;
 					}
-					/* parse[i]["thumbnail"] = parse[i]["avatar"];
-					delete parse[i]["avatar"]; */
 				}
 				
 				if (isDevMode()) {
@@ -494,74 +465,11 @@ function internalAPIupdate() {
 						})
 					/* }) */
 				})
-				
-				/* var ownname = $(data).find("#channelnamejs").val();
-				storage.local.set({"USERNAME":ownname}, function() {
-					//
-				}); */
-				
-				/* var parse;
-				parse = $(data).find('tr:contains("Live")').find('img');
-				parse.each(function(i) {
-					
-					var name = $(this).attr('alt');
-					var thumbnail = $(this).attr('src');
-					
-					exploreData[i] = {
-						"channel_name": name,
-						"thumbnail": thumbnail
-					}
-					
-					if (isDevMode()) console.log(exploreData[i]);
-				});
-				
-				updateLive(()=>{
-					updateAPI(()=>{
-						updateBadge(()=>{
-							updateMOTD(); // done!
-						})
-					})
-				}) */
 			},
 			error: function(data) {
 				if (isDevMode()) console.log(data); // oh no
 			}
 		});
-	});
-}
-
-// main update function
-function update() {
-	
-	return internalAPIupdate(); // a mali estremi.....
-	
-	$.post("https://ptvintern.picarto.tv/ptvapi",
-		{}).done(function(data) {
-		//exploreData = JSON.parse(data);
-		exploreData = JSON.parse("{}");
-		
-		console.log(exploreData);
-		
-		return;
-		
-		// check user session
-		if (exploreData[0] && exploreData[0].error == "notLoggedin") {
-			if (isDevMode())
-				console.log("User is not logged in!");
-			if (notloggedinrecall == false)
-				loggedintest();
-		}
-		else {
-			notloggedinrecall = false;
-			/* storage.local.set({"USERNAME" : ""}); */
-			updateLive(()=>{
-				updateAPI(()=>{
-					updateBadge(()=>{
-						updateMOTD(); // done!
-					})
-				})
-			})
-		}
 	});
 }
 

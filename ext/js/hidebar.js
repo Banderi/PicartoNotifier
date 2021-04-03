@@ -37,9 +37,9 @@ function update() {
 			});
 		}
 		if (settings["expandstrm"] == true) {
-			if ($(".userbar-multistream-hover-target").children().length < 2)
+			if ($(".mistvideo-container outer_window").children().length < 2)
 				return;
-			$.each($('.vjs-menu-button.vjs-control.vjs-button'), function() {
+			$.each($('.mistvideo-container mistvideo-background mistvideo-padding'), function() {
 				let e = $(this);
 				if (!e.prev().hasClass("vjs-expand-button")) {
 					addButtons(e);
@@ -187,8 +187,25 @@ function addButtons(e) {
     chat.focus();
 } */
 
-$(document).ready(() => {
+var try_interval = null;
+var targetNode = null;
+
+function try_target() {
+	let element = document.querySelectorAll('[class*="ChannelChat__ChatVirtualList"]');
 	
+	if (element && element.length >= 1) {
+		startup(element[0]);
+	} else
+		setTimeout(try_target, 500);
+}
+
+$(document).ready(() => {
+	console.log("Trying...");
+	try_target();
+});
+
+function startup(target) {
+	/* console.log("Setting up...") */
 	var styleTag = $(`
 			<style>
 			.vjs-button {
@@ -206,7 +223,9 @@ $(document).ready(() => {
 		`);
 	$('html > head').append(styleTag);
 	
+	/* console.log("Getting settings...") */
 	storage.sync.get("SETTINGS", (data) => {
+		console.log("Settings loaded!!")
 		for (let a in data["SETTINGS"]) {
 			let setting = data["SETTINGS"][a];
 			settings[a] = setting;
@@ -216,11 +235,11 @@ $(document).ready(() => {
 			$("#chat_extras_btn").parent().append($('<div/>', {'class': 'pnt_quick_emotes', 'id' : 'pnt_quick_emotes'}));
 		} */
 		
-		let targetNode = document.getElementById("chatContainer");
+		targetNode = target;
 		let options = {childList: true, subtree: true};
 		let observer = new MutationObserver((mutationList) => {
 			if (settings["markup"] == true || settings["norefer"] == true) {
-				let msgs = document.getElementsByClassName("theMsg");
+				let msgs = document.querySelectorAll('[class*="InlineMessage"]');
 				for (let a = msgs.length-1; a >= 0; a--) {
 					let m = msgs[a];
 					
@@ -258,6 +277,7 @@ $(document).ready(() => {
 				}
 			}
 		});
+		console.log(targetNode);
 		observer.observe(targetNode, options);
 	});
-});
+}

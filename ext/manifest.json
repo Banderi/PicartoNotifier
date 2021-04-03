@@ -1,6 +1,6 @@
 {
 	"name": "Picarto Notifier",
-	"version": "2.4.0",
+	"version": "2.4.1",
 	"manifest_version": 2,
 	"permissions": [
 		"webRequest",
@@ -26,9 +26,14 @@
 	},
 	"content_scripts": 
 	[ {
+		"permissions": [
+			"storage"
+		],
 		"matches": [
 			"http://picarto.tv/*",
-			"https://picarto.tv/*"
+			"https://picarto.tv/*",
+			"http://www.picarto.tv/*",
+			"https://www.picarto.tv/*"
 		],
 		"js": [ "js/jquery.min.js", "js/hidebar.js" ],
 		"run_at" : "document_start"
