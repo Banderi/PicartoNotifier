@@ -8,7 +8,7 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
-var motd = "Added OAuth override, fixed some minor stuff";
+var motd = "Fixed for new bloody layout";
 
 var livecount = 0;
 var invitecount = 0;
@@ -367,22 +367,189 @@ function updateMOTD() {
 		storage.sync.set({"MOTD" : version});
 }
 
+
+function scrapeConnectionsPage() {
+	// get multistream data
+	$.ajax({
+		url: "https://picarto.tv/settings/connections/following",
+		success: function(data) {
+			if (isDevMode()) {
+				console.log('Scraping "Connections" page...');
+				/* console.log($(data).find('.ant-avatar-image')); */
+				console.log(data);
+			}
+			/* var ownname = $(data).find("#channelnamejs").val();
+			storage.local.set({"USERNAME":ownname}, function() {
+				//
+			}); */
+			
+			var parse;
+			parse = $(data).find('tr:contains("Live")').find('img');
+			parse.each(function(i) {
+				
+				var name = $(this).attr('alt');
+				var thumbnail = $(this).attr('src');
+				
+				exploreData[i] = {
+					"channel_name": name,
+					"thumbnail": thumbnail
+				}
+				
+				if (isDevMode()) console.log(exploreData[i]);
+			});
+			
+			updateLive(()=>{
+				/* updateAPI(()=>{ */
+					updateBadge(()=>{
+						updateMOTD(); // done!
+					})
+				/* }) */
+			})
+		},
+		error: function(data) {
+			if (isDevMode()) console.log(data); // oh no
+		}
+	});
+}
+
+function getCookies(domain, name, callback) {
+		
+		if (!browser.cookies) {
+			browser.cookies = browser.experimental.cookies;
+		}
+	
+		browser.cookies.get({"url": domain, "name": name}, function(cookie) {
+			if(callback) {
+				callback(cookie.value);
+			}
+		});
+	}
+function internalAPIupdate() {
+
+	getCookies("https://picarto.tv", "ptv_auth", function(a) {
+		let auth_bear = "Bearer " + (JSON.parse(a)["access_token"])
+		/* console.log(auth_bear); */
+		/* return; */
+	
+		/* let querytosend = {
+			query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    notification\n    online\n    __typename\n  }\n}\n",
+			variables: {
+				"first": 20,
+				"page": 1,
+				"q": ""
+			}
+		} */
+		
+		let querytosend = {
+			query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    __typename\n  }\n}\n",
+			variables: {
+				"first": 20,
+				"page": 1,
+				"q": ""
+			}
+		}
+		
+		/* querytosend = {
+			query: "query ($name: String) {\n  me {\n    id\n    is_admin\n    channel {\n      id\n      account_type\n      avatar_url\n      name\n      __typename\n    }\n    __typename\n  }\n  getLoadBalancerUrl(channel_name: $name) {\n    url\n    origin\n    __typename\n  }\n}\n",
+			variables: {
+				"name": "Banderi"
+			}
+		} */
+		
+		$.ajax({
+			url: "https://ptvintern.picarto.tv/ptvapi",
+			type:"POST",
+			data:JSON.stringify(querytosend),
+			contentType:"application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('authorization', auth_bear);
+			},
+			/* authorization:auth_bear, */
+			dataType:"json",
+			success: function(data) {
+				
+				var parse = data["data"]["following"];
+				
+				for (i in parse) {
+					if (parse[i]["online"] == false) {
+						delete parse[i];
+						continue;
+					}
+					/* parse[i]["thumbnail"] = parse[i]["avatar"];
+					delete parse[i]["avatar"]; */
+				}
+				
+				if (isDevMode()) {
+					/* console.log('Scraping "Connections" page...'); */
+					/* console.log($(data).find('.ant-avatar-image')); */
+					console.log(parse);
+				}
+				
+				exploreData = parse;
+				
+				updateLive(()=>{
+					/* updateAPI(()=>{ */
+						updateBadge(()=>{
+							updateMOTD(); // done!
+						})
+					/* }) */
+				})
+				
+				/* var ownname = $(data).find("#channelnamejs").val();
+				storage.local.set({"USERNAME":ownname}, function() {
+					//
+				}); */
+				
+				/* var parse;
+				parse = $(data).find('tr:contains("Live")').find('img');
+				parse.each(function(i) {
+					
+					var name = $(this).attr('alt');
+					var thumbnail = $(this).attr('src');
+					
+					exploreData[i] = {
+						"channel_name": name,
+						"thumbnail": thumbnail
+					}
+					
+					if (isDevMode()) console.log(exploreData[i]);
+				});
+				
+				updateLive(()=>{
+					updateAPI(()=>{
+						updateBadge(()=>{
+							updateMOTD(); // done!
+						})
+					})
+				}) */
+			},
+			error: function(data) {
+				if (isDevMode()) console.log(data); // oh no
+			}
+		});
+	});
+}
+
 // main update function
 function update() {
-	$.post("https://picarto.tv/process/explore", {follows: true}).done(function(data) {
-		exploreData = JSON.parse(data);
+	
+	return internalAPIupdate(); // a mali estremi.....
+	
+	$.post("https://ptvintern.picarto.tv/ptvapi",
+		{}).done(function(data) {
+		//exploreData = JSON.parse(data);
+		exploreData = JSON.parse("{}");
+		
+		console.log(exploreData);
+		
+		return;
 		
 		// check user session
 		if (exploreData[0] && exploreData[0].error == "notLoggedin") {
-			if (isDevMode()) {
+			if (isDevMode())
 				console.log("User is not logged in!");
-			}
-			if (notloggedinrecall == false) {
+			if (notloggedinrecall == false)
 				loggedintest();
-			}
-			else {
-				//
-			}
 		}
 		else {
 			notloggedinrecall = false;
@@ -390,8 +557,7 @@ function update() {
 			updateLive(()=>{
 				updateAPI(()=>{
 					updateBadge(()=>{
-						updateMOTD();
-						// done!
+						updateMOTD(); // done!
 					})
 				})
 			})
@@ -410,7 +576,7 @@ let defaults = {
 	"badgecolor" : "#33aa33",
 	"markup" : true,
 	"maxmsg" : "0",
-	"fullscreenfix" : true,
+	"fullscreenfix" : false,
 	"expandstrm" : true,
 	"norefer" : true
 };

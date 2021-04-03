@@ -127,12 +127,12 @@ async function postAPI(url, callback) {
 	});
 }
 
-function appendLiveLink(name) {
+function appendLiveLink(name, thumb) {
 	$('#con_live').append(
 		$('<div/>', {'class': 'conn_streamer', 'id': name}).append(
 			$('<div/>', {'class': 'conn_streamer_head'}).append(
 				$('<div/>', {'class': 'col'}).append(
-					$('<img/>', {'class': 'conn_avatar'}).attr("src", "https://picarto.tv/user_data/usrimg/" + name.toLowerCase() + "/dsdefault.jpg")
+					$('<img/>', {'class': 'conn_avatar'}).attr("src", thumb)
 				)
 				.append(
 					$('<span/>', {'class': 'conn_user', text: name})
@@ -150,12 +150,12 @@ function appendLiveLink(name) {
 		$(".ms_button").hide();
 };
 
-function appendMultiCard(name, id, type) {
+function appendMultiCard(name, thumb, id, type) {
 	$('#ms_invites').append(
 		$('<div/>', {'class': 'conn_invite'}).append(
 			$('<div/>', {'class': 'conn_streamer_head'}).append(
 				$('<div/>', {'class': 'col live'}).append(
-					$('<img/>', {'class': 'conn_avatar'}).attr("src", "https://picarto.tv/user_data/usrimg/" + name.toLowerCase() + "/dsdefault.jpg")
+					$('<img/>', {'class': 'conn_avatar'}).attr("src", thumb)
 				)
 			)
 		)
@@ -211,12 +211,12 @@ function appendMultiCard(name, id, type) {
 	}
 }
 
-function appendNotificationCard(name, uuid, timestamp, type) {
+function appendNotificationCard(name, thumb, uuid, timestamp, type) {
 	$('#con_notifications').prepend(
 		$('<div/>', {'class': 'conn_notification'}).append(
 			$('<div/>', {'class': 'conn_streamer_head'}).append(
 				$('<div/>', {'class': 'col notif'}).append(
-					$('<img/>', {'class': 'conn_avatar'}).attr("src", "https://picarto.tv/user_data/usrimg/" + name.toLowerCase() + "/dsdefault.jpg")
+					$('<img/>', {'class': 'conn_avatar'}).attr("src", thumb)
 				)
 			)
 		)
@@ -275,6 +275,7 @@ function updateLive(callback) {
 				
 				let name = u;
 				let user = livecache[u];
+				let thumb = user["avatar"];
 				
 				var found = jQuery.inArray(name, recentnames);
 				if (found >= 0) {
@@ -286,7 +287,7 @@ function updateLive(callback) {
 				
 				
 				// add link to the window				
-				appendLiveLink(name);
+				appendLiveLink(name, thumb);
 				
 				peoplelive = true;
 			}
@@ -336,26 +337,30 @@ function updateMulti(callback) {
 			for (i in m["incoming"]) {
 				let o = m["incoming"][i];
 				let name = o["name"];
-				appendMultiCard(name, o["user_id"], "incoming");
+				let thumb = o["avatar"];
+				appendMultiCard(name, thumb, o["user_id"], "incoming");
 				newnames.push(name);
 			}
 			for (i in m["outgoing"]) {
 				let o = m["outgoing"][i];
 				let name = o["name"];
-				appendMultiCard(name, o["user_id"], "outgoing");
+				let thumb = o["avatar"];
+				appendMultiCard(name, thumb, o["user_id"], "outgoing");
 				newnames.push(name);
 			}
 			if (m["session"]["host"]["name"] == ownname)
 				for (i in m["session"]["guests"]) {
 					let o = m["session"]["guests"][i];
 					let name = o["name"];
-					appendMultiCard(name, o["user_id"], "guest");
+				let thumb = o["avatar"];
+					appendMultiCard(name, thumb, o["user_id"], "guest");
 					newnames.push(name);
 				}
 			if (m["session"]["host"] && m["session"]["host"]["name"] != ownname && m["session"]["active"] == true) {
 				let o = m["session"]["host"];
 				let name = o["name"];
-				appendMultiCard(name, o["user_id"], "host");
+				let thumb = o["avatar"];
+				appendMultiCard(name, thumb, o["user_id"], "host");
 				newnames.push(name);
 			}
 			
@@ -405,7 +410,8 @@ function updateNotifications() {
 				let uuid = notifcache[i]["uuid"];
 				let timestamp = notifcache[i]["timestamp"];
 				let type = notifcache[i]["type"];
-				appendNotificationCard(name, uuid, timestamp, type);
+				let thumb = notifcache[i]["avatar"];
+				appendNotificationCard(name, thumb, uuid, timestamp, type);
 			}
 		}
 		
