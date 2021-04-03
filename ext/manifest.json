@@ -3,8 +3,6 @@
 	"version": "2.4.1",
 	"manifest_version": 2,
 	"permissions": [
-		"webRequest",
-		"webRequestBlocking",
 		"*://*.picarto.tv/*",
 		"storage",
 		"notifications",
