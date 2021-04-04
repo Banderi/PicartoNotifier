@@ -4,6 +4,9 @@ if (chrome) {
 	notifications = chrome.notifications;
 	browser = chrome;
 }
+if (!browser.cookies) {
+	browser.cookies = browser.experimental.cookies;
+}
 function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
@@ -30,13 +33,30 @@ function IsNullOrWhitespace( input ) {
   return !input || !input.trim();
 }
 
-function getCookies(domain, name, callback) {
-	if (!browser.cookies) {
-		browser.cookies = browser.experimental.cookies;
+async function getCookies(domains, name, callback, failure) {
+	for (d in domains) {
+		// FORCE function to wait...
+		const value = await new Promise((resolve, reject) => {
+			browser.cookies.get({"url": domains[d], "name": name}, function(cookie) {
+				if (cookie) {
+					/* console.log(cookie); */
+					resolve(cookie.value);
+				} else reject();
+			});
+		}).catch(e => {
+			if (e)
+				console.log(e); // unexpected error???? otherwise, it's from "reject"
+		});
+		if (value && callback)
+			return callback(value, domains[d]);
 	}
-	browser.cookies.get({"url": domain, "name": name}, function(cookie) {
-		if(callback)
-			callback(cookie.value);
+	if (failure)
+		return failure(); // none of the domains matched....
+}
+function setCookie(url, name, value, callback) {
+	browser.cookies.set({"url": url, "name": name, "value": value}, function() {
+		if (callback)
+			callback();
 	});
 }
 
@@ -218,7 +238,7 @@ function updateLive(callback) {
 		
 		browser.storage.local.set({"LIVE" : cleanData}, function() {
 			typeof callback === 'function' && callback();
-		});	
+		});
 	});
 }
 function updateAPI(callback) {
@@ -415,62 +435,128 @@ function scrapeConnectionsPage() { // completely broken, past code snippet only 
 }
 
 // main update function
+function fetch_channel_data(auth_bear) {
+	
+	let querytosend = {
+		query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    __typename\n  }\n}\n",
+		variables: {
+			"first": 20,
+			"page": 1,
+			"q": ""
+		}
+	}
+	
+	$.ajax({
+		url: "https://ptvintern.picarto.tv/ptvapi",
+		type:"POST",
+		data:JSON.stringify(querytosend),
+		contentType:"application/json; charset=utf-8",
+		beforeSend: function (xhr) {
+			xhr.setRequestHeader('authorization', auth_bear);
+		},
+		dataType:"json",
+		success: function(data) {
+			
+			if (!data["data"]) {
+				console.log("ERROR: " + data["errors"][0]["errorDescription"]);
+				return;
+			}
+			
+			var parse = data["data"]["following"];
+			
+			for (i in parse) {
+				if (parse[i]["online"] == false) {
+					delete parse[i];
+					continue;
+				}
+			}
+			
+			if (isDevMode()) {
+				/* console.log('Scraping "Connections" page...'); */
+				/* console.log($(data).find('.ant-avatar-image')); */
+				console.log(parse);
+			}
+			
+			exploreData = parse;
+			
+			updateLive(()=>{
+				/* updateAPI(()=>{ */
+					updateBadge(()=>{
+						updateMOTD(); // done!
+					})
+				/* }) */
+			})
+		},
+		error: function(data) {
+			if (isDevMode()) console.log(data); // oh no
+		}
+	});
+}
 function update() {
+	storage.local.set({"ERROR" : 0});
+	
+	fetch_channel_data("Bearer " + token);
+	
+	
+	return;
 	
 	// first, fetch auth bearer token from cookies
-	getCookies("https://picarto.tv", "ptv_auth", function(a) {
-		let auth_bear = "Bearer " + (JSON.parse(a)["access_token"])
-		let querytosend = {
-			query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    __typename\n  }\n}\n",
-			variables: {
-				"first": 20,
-				"page": 1,
-				"q": ""
-			}
-		}
-		
-		$.ajax({
-			url: "https://ptvintern.picarto.tv/ptvapi",
-			type:"POST",
-			data:JSON.stringify(querytosend),
-			contentType:"application/json; charset=utf-8",
-			beforeSend: function (xhr) {
-				xhr.setRequestHeader('authorization', auth_bear);
-			},
-			/* authorization:auth_bear, */
-			dataType:"json",
-			success: function(data) {
-				
-				var parse = data["data"]["following"];
-				
-				for (i in parse) {
-					if (parse[i]["online"] == false) {
-						delete parse[i];
-						continue;
-					}
+	console.log("testing for ptv_auth_perm");
+	getCookies(["https://picarto.tv", "http://picarto.tv", "https://www.picarto.tv", "http://www.picarto.tv"], "ptv_auth_perm",
+		function(a) {
+			fetch_channel_data("Bearer " + (JSON.parse(a)["access_token"]));
+		},
+		function() {
+			console.log("not found.... testing for ptv_auth");
+			getCookies(["https://picarto.tv", "http://picarto.tv", "https://www.picarto.tv", "http://www.picarto.tv"], "ptv_auth",
+				function(a) {
+					console.log("setting ptv_auth_perm!");
+					fetch_channel_data("Bearer " + (JSON.parse(a)["access_token"]));
+					setCookie("http://www.picarto.tv", "ptv_auth_perm", a);
+				}, // success callback
+				function() {
+					console.log("not found :,(");
+					storage.local.set({"ERROR" : 1});
+					return;
+					
+					// if cookie is not present, ask for new token??
+					getCookies(["https://picarto.tv", "http://picarto.tv", "https://www.picarto.tv", "http://www.picarto.tv"], "picartoCookieID", function(ptv_id) {
+						let querytosend = {
+							operationName: "generateToken",
+							query: "query generateToken($channel_id: Int!) {\n  __typename\n  generateJwtToken(channel_id: $channel_id) {\n    key\n    __typename\n  }\n}\n",
+							variables: {
+								"channel_id": ptv_id
+							}
+						}
+						$.ajax({
+							url: "https://ptvintern.picarto.tv/ptvapi",
+							type:"POST",
+							data:JSON.stringify(querytosend),
+							contentType:"application/json; charset=utf-8",
+							/* beforeSend: function (xhr) {
+								xhr.setRequestHeader('authorization', auth_bear);
+							}, */
+							dataType:"json",
+							success: function(data) {
+								let token = "Bearer " + data["data"]["generateJwtToken"]["key"];
+								fetch_channel_data(token);
+								/* setCookie("https://picarto.tv", "ptv_auth", JSON.stringify({"access_token":token}), function() {
+									fetch_channel_data(token);
+								}); */
+							},
+							error: function(data) {
+								if (isDevMode()) console.log(data); // oh no
+							}
+						});
+					});
 				}
-				
-				if (isDevMode()) {
-					/* console.log('Scraping "Connections" page...'); */
-					/* console.log($(data).find('.ant-avatar-image')); */
-					console.log(parse);
-				}
-				
-				exploreData = parse;
-				
-				updateLive(()=>{
-					/* updateAPI(()=>{ */
-						updateBadge(()=>{
-							updateMOTD(); // done!
-						})
-					/* }) */
-				})
-			},
-			error: function(data) {
-				if (isDevMode()) console.log(data); // oh no
-			}
-		});
-	});
+			)
+		} // failure callback
+	);
+	
+	
+	
+	
 }
 
 // get default settings or fetch from storage
