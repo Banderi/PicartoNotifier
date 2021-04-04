@@ -20,7 +20,30 @@ let defaults = {
 
 var settings = defaults;
 
-function update() {
+var tabID = null;
+browser.runtime.sendMessage({ message: "tabID" }, t => {
+   tabID = t["tab"];
+   console.log('My tabId is', tabID);
+});
+
+async function update() {
+	
+	/* console.log(localStorage["auth"]); */
+	/* storage.local.get(null, (data) => {
+		console.log(data);
+	}); */
+	
+	await storage.sync.set({"OAUTH" : JSON.parse(localStorage["auth"])["access_token"]});
+	/* console.log(localStorage);
+	console.log(JSON.parse(localStorage["auth"]));
+	console.log(JSON.parse(localStorage["auth"])["access_token"]); */
+	/* storage.sync.get("OAUTH", (data) => {
+		console.log(data["OAUTH"]);
+	});
+	storage.sync.get("SETTINGS", (data) => {
+		console.log(data["SETTINGS"]);
+	}); */
+	
 	if (window.location.pathname != "/") {
 		if (settings["picartobar"] == true && !$(".emojiPicker").is(":visible")) {
 			var s = $("#hideNotifications");

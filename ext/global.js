@@ -495,8 +495,10 @@ function fetch_channel_data(auth_bear) {
 function update() {
 	storage.local.set({"ERROR" : 0});
 	
-	fetch_channel_data("Bearer " + token);
-	
+	storage.sync.get("OAUTH", (v) => {
+		token = v["OAUTH"];
+		fetch_channel_data("Bearer " + token);
+	});
 	
 	return;
 	
@@ -585,7 +587,7 @@ function getSettings() {
 			let setting = data["SETTINGS"][a];
 			settings[a] = setting;
 		}
-		storage.local.get(["OAUTH"], (data) => {
+		storage.sync.get(["OAUTH"], (data) => {
 			if (data["OAUTH"])
 				token = data["OAUTH"];
 			
@@ -668,6 +670,9 @@ browser.runtime.onMessage.addListener(
 				sendResponse(result);
 			});
 			return true;
+		case "tabID":
+			sendResponse({tab: sender.tab.id});
+			break;
 		}
 		return false;
 	}
