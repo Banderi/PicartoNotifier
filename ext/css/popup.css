@@ -61,12 +61,12 @@ body {
 	transition: all ease .3s;
 }
 .heading {
+	white-space: pre-wrap;
 	text-align: center;
 	font-size: 1.2em;
 	vertical-align: top;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	
 	margin-bottom: 5px;
 }
 .heading.streaming {
@@ -518,16 +518,16 @@ input[type=checkbox].checkslider:disabled {
 	outline: none;
 }
 .numberbox {
-	height: 20px;
-    width: 47px;
-    padding: 4px;
-    margin: 2 4;
-    border-radius: 6px;
-    -webkit-border-radius: 6px;
-    -moz-border-radius: 6px;
-    -o-border-radius: 6px;
-    outline: none;
-    border: none;
+	height: 18px;
+	width: 47px;
+	padding: 4px;
+	margin: 2 4;
+	border-radius: 6px;
+	-webkit-border-radius: 6px;
+	-moz-border-radius: 6px;
+	-o-border-radius: 6px;
+	outline: none;
+	border: none;
 }
 .colortext {
 	position: absolute;

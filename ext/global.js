@@ -156,19 +156,18 @@ function loggedintest() {
 	notloggedinrecall = true;
 }
 
-function notify(name, type) {
+function notify(name, type, avatarurl) {
 	
 	if (type == "live") {
-		if (settings["notifications"] == true) {										
+		if (settings.notifications) {										
 			browser.notifications.create(name, {
 				type: "basic",
-				iconUrl: "https://picarto.tv/user_data/usrimg/" + name.toLowerCase() + "/dsdefault.jpg",
+				iconUrl: avatarurl,
 				title: "Currently streaming on Picarto:",
 				message: name
 			}, function() {});
-			if (settings["alert"] == true) {
+			if (settings.alert)
 				ding.play();
-			}
 		}
 	}
 }
@@ -209,9 +208,8 @@ function updateLive(callback) {
 				
 				// remove user from cache
 				delete livecache[u]
-				if (isDevMode()) {
+				if (isDevMode())
 					console.log("User '" + name + "' no longer online (removed from cache)");
-				}
 			}
 		}
 		
@@ -220,17 +218,17 @@ function updateLive(callback) {
 			
 			let name = exploreData[i].channel_name;
 			let user = exploreData[i];
+			let avatarurl = exploreData[i].avatar;
 			
 			cleanData[name] = user;
 			
 			// new user online
 			if (!user["old"]) {
-				if (isDevMode()) {
+				if (isDevMode())
 					console.log(name + " just started streaming!");
-				}
 				
 				// dispatch live notification (or not)
-				notify(name, "live");
+				notify(name, "live", avatarurl);
 			}
 		}
 		
@@ -273,7 +271,7 @@ function updateAPI(callback) {
 						storage.local.set({"API_NOTIFICATIONS" : c});
 						
 						// automatically remove notifications if setting is enabled
-						if (settings["picartobar"] == true && c && c[0]) {
+						if (settings.picartobar && c && c[0]) {
 							for (n in c) {
 								postAPI("user/notifications/" + c[n]["uuid"] + "/delete");
 							}
@@ -298,12 +296,12 @@ function updateAPI(callback) {
 	typeof callback === 'function' && callback();
 }
 function updateBadge(callback) {
-	browser.browserAction.setBadgeBackgroundColor( { color: settings["badgecolor"]} );
+	browser.browserAction.setBadgeBackgroundColor( { color: settings.badgecolor} );
 			
 	var badgetext = "";
 	var badgetooltip = "";
 	
-	if(settings["badgenotif"] == true) {
+	if(settings.badgenotif) {
 		if (notifications == 1) {
 			badgetext = "1";
 			badgetooltip = "1 person streaming";
@@ -318,7 +316,7 @@ function updateBadge(callback) {
 		browser.browserAction.setTitle({"title": badgetooltip});
 	}
 	else {
-		if (settings["streamer"] == true) {
+		if (settings.streamer) {
 			
 			if (livecount == 1) {
 				badgetext = "1";
@@ -373,7 +371,7 @@ function updateBadge(callback) {
 }
 function updateMOTD() {
 	let version = browser.runtime.getManifest().version;	
-	if (settings["updatemsg"]) {
+	if (settings.updatemsg) {
 		storage.sync.get(["MOTD"], (data) => {
 			if ((data["MOTD"] && data["MOTD"] != "" && data["MOTD"].split('.').slice(0,2).join(".") != version.split('.').slice(0,2).join(".")) || !data["MOTD"] || data["MOTD"] == "") {
 				browser.notifications.create("MOTD", {
@@ -434,74 +432,7 @@ function scrapeConnectionsPage() { // completely broken, past code snippet only 
 	});
 }
 
-// main update function
-function fetch_channel_data(auth_bear) {
-	
-	let querytosend = {
-		query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    __typename\n  }\n}\n",
-		variables: {
-			"first": 20,
-			"page": 1,
-			"q": ""
-		}
-	}
-	
-	$.ajax({
-		url: "https://ptvintern.picarto.tv/ptvapi",
-		type:"POST",
-		data:JSON.stringify(querytosend),
-		contentType:"application/json; charset=utf-8",
-		beforeSend: function (xhr) {
-			xhr.setRequestHeader('authorization', auth_bear);
-		},
-		dataType:"json",
-		success: function(data) {
-			
-			if (!data["data"]) {
-				console.log("ERROR: " + data["errors"][0]["errorDescription"]);
-				return;
-			}
-			
-			var parse = data["data"]["following"];
-			
-			for (i in parse) {
-				if (parse[i]["online"] == false) {
-					delete parse[i];
-					continue;
-				}
-			}
-			
-			if (isDevMode()) {
-				/* console.log('Scraping "Connections" page...'); */
-				/* console.log($(data).find('.ant-avatar-image')); */
-				console.log(parse);
-			}
-			
-			exploreData = parse;
-			
-			updateLive(()=>{
-				/* updateAPI(()=>{ */
-					updateBadge(()=>{
-						updateMOTD(); // done!
-					})
-				/* }) */
-			})
-		},
-		error: function(data) {
-			if (isDevMode()) console.log(data); // oh no
-		}
-	});
-}
-function update() {
-	storage.local.set({"ERROR" : 0});
-	
-	storage.sync.get("OAUTH", (v) => {
-		token = v["OAUTH"];
-		fetch_channel_data("Bearer " + token);
-	});
-	
-	return;
-	
+function fetch_from_cookies() {
 	// first, fetch auth bearer token from cookies
 	console.log("testing for ptv_auth_perm");
 	getCookies(["https://picarto.tv", "http://picarto.tv", "https://www.picarto.tv", "http://www.picarto.tv"], "ptv_auth_perm",
@@ -555,10 +486,63 @@ function update() {
 			)
 		} // failure callback
 	);
+}
+function fetch_channel_data(auth_bear) {
 	
+	let querytosend = {
+		query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    __typename\n  }\n}\n",
+		variables: {
+			"first": settings.maxnames,
+			"page": 1,
+			"q": ""
+		}
+	}
 	
-	
-	
+	$.ajax({
+		url: "https://ptvintern.picarto.tv/ptvapi",
+		type:"POST",
+		data:JSON.stringify(querytosend),
+		contentType:"application/json; charset=utf-8",
+		beforeSend: function (xhr) {
+			xhr.setRequestHeader('authorization', auth_bear);
+		},
+		dataType:"json",
+		success: function(data) {
+			
+			if (!data["data"]) {
+				console.log("ERROR: " + data["errors"][0]["errorDescription"]);
+				return;
+			}
+			
+			var parse = data["data"]["following"];
+			
+			for (i in parse) {
+				if (parse[i]["online"] == false) {
+					delete parse[i];
+					continue;
+				}
+			}
+			
+			if (isDevMode()) {
+				/* console.log('Scraping "Connections" page...'); */
+				/* console.log($(data).find('.ant-avatar-image')); */
+				console.log(parse);
+			}
+			
+			exploreData = parse;
+			
+			updateLive(()=>{
+				/* updateAPI(()=>{ */
+					updateBadge(()=>{
+						updateMOTD(); // done!
+					})
+				/* }) */
+			})
+		},
+		error: function(data) {
+			if (isDevMode()) console.log(data); // oh no
+		}
+	});
 }
 
 // get default settings or fetch from storage
@@ -570,16 +554,32 @@ let defaults = {
 	"badgenotif" : false,
 	"updatemsg" : true,
 	"badgecolor" : "#33aa33",
+	"dingvolume" : 100,
+	
 	"markup" : true,
 	"maxmsg" : "0",
 	"fullscreenfix" : false,
 	"expandstrm" : true,
-	"norefer" : true
+	"norefer" : true,
+	"updateinterval": 5,
+	"maxnames" : 100
 };
 
 var settings = {};
 settings = $.extend(true, {}, defaults);
-var updater;
+var updater = null;
+
+// main update function
+function update() {
+	storage.local.set({"ERROR" : 0});
+	
+	storage.sync.get("OAUTH", (v) => {
+		token = v["OAUTH"];
+		fetch_channel_data("Bearer " + token);
+	});
+	
+	updater = setTimeout(update, settings.updateinterval * 1000);
+}
 
 function getSettings() {
 	storage.sync.get(["SETTINGS"], (data) => {
@@ -591,17 +591,19 @@ function getSettings() {
 			if (data["OAUTH"])
 				token = data["OAUTH"];
 			
+			// set notif volume
+			ding.volume = parseFloat(settings.dingvolume) / 100;
+			
 			// start the update!
-			update();
-			updater = setInterval(update, 5000);
+			if (!updater)
+				update();
 		});
 	});
 }
 
 function restart() {
-	clearInterval(updater);
 	settings = $.extend(true, {}, defaults);
-	getSettings()
+	getSettings();
 }
 
 getSettings();

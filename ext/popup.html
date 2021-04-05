@@ -129,16 +129,24 @@
 					<span class="setting_subtext">Use Chrome's synchronized extension storage for settings across devices</span>
 				</div> -->
 				
-				<div class="setting">
+				<!-- <div class="setting">
 					<input type="checkbox" class="checkslider" id="oauthshow"><span class="setting_text">Show OAuth token</span>
 					<div id="oauthhidden" class="input-group oauthtoken">
 						<input type="textbox" class="form-control nooutline" id="oauthtoken" spellcheck="false"><span class="input-group-addon btnBase Dark displayCell oauthtoken" id="oauthconfirm">Save</button>
 					</div>
 					<span class="setting_subtext">Manually edit or clear the OAuth token</span>
-				</div>
+				</div> -->
 				<div class="setting">
 					<input type="text" class="colortext" id="badgecolor" value="#33aa33"><span class="setting_text">Notification Badge color</span>
 					<span class="setting_subtext"></span>
+				</div>
+				<div class="setting">
+					<input type="number" class="numberbox" id="dingvolume" value="100" min="0" max="100" step="1"><span class="setting_text">Sound notification volume</span>
+					<span class="setting_subtext"></span>
+				</div>
+				<div class="setting">
+					<input type="number" class="numberbox" id="updateinterval" value="5" min="5" max="3600" step="1"><span class="setting_text">Primary refresh interval</span>
+					<span class="setting_subtext">How often the apps refreshes the list of live channels, in seconds</span>
 				</div>
 			</div>
 			<div class="submain">
@@ -168,10 +176,10 @@
 					<input type="checkbox" class="checkslider" id="expandstrm"><span class="setting_text">Quick stream expand button</span>
 					<span class="setting_subtext">Add back the quick stream expand/hide buttons in the player</span>
 				</div>
-				<div class="setting">
+				<!-- <div class="setting">
 					<input type="checkbox" class="checkslider" id="fullscreenfix"><span class="setting_text">Fix fullscreen</span>
 					<span class="setting_subtext">Set player to HLS automatically to fix fullscreen reloading the stream</span>
-				</div>
+				</div> -->
 				<div class="setting">
 					<input type="checkbox" class="checkslider" id="norefer"><span class="setting_text">No referrer in chat links</span>
 					<span class="setting_subtext">Seamlessly open the link's destination for in-chat posts</span>

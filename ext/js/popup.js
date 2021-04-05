@@ -149,7 +149,6 @@ function appendLiveLink(name, thumb) {
 	if (!token)
 		$(".ms_button").hide();
 };
-
 function appendMultiCard(name, thumb, id, type) {
 	$('#ms_invites').append(
 		$('<div/>', {'class': 'conn_invite'}).append(
@@ -210,7 +209,6 @@ function appendMultiCard(name, thumb, id, type) {
 		);
 	}
 }
-
 function appendNotificationCard(name, thumb, uuid, timestamp, type) {
 	$('#con_notifications').prepend(
 		$('<div/>', {'class': 'conn_notification'}).append(
@@ -314,7 +312,6 @@ function updateLive(callback) {
 		typeof callback === 'function' && callback();
 	});
 }
-
 function updateMulti(callback) {
 	storage.local.get("API_MULTISTREAM", function(items) {
 		
@@ -379,10 +376,9 @@ function updateMulti(callback) {
 		typeof callback === 'function' && callback();
 	});
 }
-
 function updateNotifications() {
 	
-	if (settings["picartobar"] == true && notifcache[0]) {
+	if (settings.picartobar && notifcache[0]) {
 		for (n in notifcache) {
 			postAPI("user/notifications/" + notifcache[n]["uuid"] + "/delete");
 		}
@@ -457,7 +453,6 @@ function updateNotifications() {
 			$('#notif_badge').hide();
 	});
 }
-
 function updateRecordings() {
 	storage.local.get("API_RECORDINGS", function(items) {
 		
@@ -606,17 +601,13 @@ function updateDashboard(c = false) {
 }
 
 function updateAdvanced() {
-	if (settings["streamer"]) {
+	if (!settings.streamer || true) { // temp: no streamer mode
+		$("#advanced").hide();
+		$(".ms_inv").hide();
+	} else {
 		$("#advanced").show();
 		if (token)
 			$(".ms_inv").show();
-	}
-	else if (!settings["streamer"]) {
-		$("#advanced").hide();
-		$(".ms_inv").hide();
-	}
-	
-	if (settings["streamer"] == true) {
 		
 		updateDashboard();
 		
@@ -817,24 +808,36 @@ function update() {
 	
 	multistream = false;
 	
-	storage.local.get("USERNAME", function(items) {
-		if (items["USERNAME"]) {
-			ownname = items["USERNAME"];
-			if (ownname === false) {
-				$('#con_headings').text("User not logged in! Please log in to Picarto.tv to use this.");
-				$('#con_live').hide();
-				$('#con_advanced').hide();
-			}
-		}
+	storage.local.get("ERROR", function(items) {
+		err = items["ERROR"];
 		
-		updateLive(()=>{
-			updateMulti(()=>{
-				updateAdvanced();
-			});
-		});
-		updateMulti();
-		updateNotifications();
-		updateRecordings();
+		$('#con_live').hide();
+		$('#con_advanced').hide();
+		
+		switch (err) {
+			case 0:
+				$('#con_live').show();
+				$('#con_advanced').show();
+				
+				updateLive(()=>{
+					updateMulti(()=>{
+						updateAdvanced();
+					});
+				});
+				updateMulti();
+				updateNotifications();
+				updateRecordings();
+				
+				break;
+			case 1:
+				$('#con_headings').text("Token expired!\nLog into any channel to refresh.");
+				break;
+			case 2:
+				$('#con_headings').text("User not logged in! Please log in to Picarto.tv to use this.");
+			default:
+				$('#con_headings').text("Uknown error: " + err);
+				break;
+		}
 	});
 	
 	if (token) {
@@ -856,14 +859,33 @@ let defaults = {
 	"badgenotif" : false,
 	"updatemsg" : true,
 	"badgecolor" : "#33aa33",
+	"dingvolume" : 100,
+	
 	"markup" : true,
 	"maxmsg" : "0",
-	"fullscreenfix" : true,
+	"fullscreenfix" : false,
 	"expandstrm" : true,
-	"norefer" : true
+	"norefer" : true,
+	"updateinterval": 5000,
+	"maxnames" : 100
 };
 
 var settings = {};
+
+function toggleSetting(s, cond) {
+	let o = $("#" + s);
+	o.prop('disabled', cond);
+	/* if (!cond)
+		o.parent().show();
+	else
+		o.parent().hide(); */
+}
+function toggleChildSettings() {
+	toggleSetting("alert", !settings.notifications);
+	/* toggleSetting("dingvolume", !settings.notifications || !settings.alert); */
+	toggleSetting("badgenotif", settings.picartobar);
+	toggleSetting("picartobar", settings.badgenotif);
+}
 
 function getSettings(callback) {
 	settings = {};
@@ -883,18 +905,7 @@ function getSettings(callback) {
 			}
 		}
 		
-		if (settings["notifications"] == false)
-			$("#alert").prop('disabled', true);
-		else
-			$("#alert").prop('disabled', false);
-		if (settings["picartobar"] == true)
-			$("#badgenotif").prop('disabled', true);
-		else
-			$("#badgenotif").prop('disabled', false);
-		if (settings["badgenotif"] == true)
-			$("#picartobar").prop('disabled', true);
-		else
-			$("#picartobar").prop('disabled', false);
+		toggleChildSettings();
 		
 		storage.sync.get(["RECENTNAMES"], (data) => {
 			if(data["RECENTNAMES"])
@@ -909,9 +920,6 @@ function getSettings(callback) {
 		}
 	});
 }
-getSettings();
-
-
 function saveSetting(setting) {
 	let obj = $("#" + setting);
 	if (obj.attr("type") === "checkbox")
@@ -924,20 +932,9 @@ function saveSetting(setting) {
 	msg[setting] = settings[setting];
 	browser.runtime.sendMessage(msg);
 	
-	if (settings["notifications"] == false)
-		$("#alert").prop('disabled', true);
-	else
-		$("#alert").prop('disabled', false);
-	if (settings["picartobar"] == true)
-		$("#badgenotif").prop('disabled', true);
-	else
-		$("#badgenotif").prop('disabled', false);
-	if (settings["badgenotif"] == true)
-		$("#picartobar").prop('disabled', true);
-	else
-		$("#picartobar").prop('disabled', false);
+	toggleChildSettings();
 }
-
+getSettings();
 
 // setup popup window
 $(document).ready(function() {
@@ -958,7 +955,7 @@ $(document).ready(function() {
 	// register color picker
 	$('#badgecolor').colorPicker({
 		onColorChange : function(id, newValue) {
-			console.log("ID: " + id + " has been changed to " + $("#badgecolor").val());
+			/* console.log("ID: " + id + " has been changed to " + $("#badgecolor").val()); */
 			saveSetting("badgecolor");
 		}
 	});
@@ -970,7 +967,7 @@ $(document).ready(function() {
 		$("." + $(this).attr('id')).addClass("active");
 	});
 	
-	if(settings["badgenotif"] == true)
+	if(settings.badgenotif)
 		$(".t_notifications").addClass("active");
 	else
 		$(".t_main").addClass("active");
@@ -981,7 +978,7 @@ $(document).ready(function() {
 		if (s == "badgecolor")
 			continue;
 		let obj = $("#" + s);
-		if (s == "maxmsg") {
+		if (obj.attr("type") == "number" || obj.attr("type") == "text") {
 			obj.on("input", function() {
 				saveSetting(setting);
 			});

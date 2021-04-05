@@ -10,12 +10,22 @@ function isDevMode() {
 
 // get default settings or fetch from storage
 let defaults = {
+	"notifications" : true,
+	"alert" : false,
+	"streamer" : false,
 	"picartobar" : false,
+	"badgenotif" : false,
+	"updatemsg" : true,
+	"badgecolor" : "#33aa33",
+	"dingvolume" : 100,
+	
 	"markup" : true,
-	"maxmsg" : 0,
-	"fullscreenfix" : true,
+	"maxmsg" : "0",
+	"fullscreenfix" : false,
 	"expandstrm" : true,
-	"norefer" : true
+	"norefer" : true,
+	"updateinterval": 5,
+	"maxnames" : 100
 };
 
 var settings = defaults;
@@ -45,12 +55,13 @@ async function update() {
 	}); */
 	
 	if (window.location.pathname != "/") {
-		if (settings["picartobar"] == true && !$(".emojiPicker").is(":visible")) {
-			var s = $("#hideNotifications");
+		if (settings.picartobar && !$(".emojiPicker").is(":visible")) {
+			/* var s = $("#hideNotifications");
 			if (s.parent().length != 0)
-				s[0].click();
+				s[0].click(); */
+			$("[title='Mark all as read']").click();
 		}
-		if (settings["fullscreenfix"] == true) {
+		if (settings.fullscreenfix && false) {
 			$(".vjs-menu.vjs-settings-menu").each(function(){
 				$(this).children().eq(2).find(".vjs-menu-item").each(function(){
 					let e = $(this);
@@ -59,7 +70,7 @@ async function update() {
 				});
 			});
 		}
-		if (settings["expandstrm"] == true) {
+		if (settings.expandstrm) {
 			if ($(".mistvideo-container outer_window").children().length < 2)
 				return;
 			$.each($('.mistvideo-container mistvideo-background mistvideo-padding'), function() {
@@ -213,22 +224,21 @@ function addButtons(e) {
 var try_interval = null;
 var targetNode = null;
 
-function try_target() {
+function startup() {
 	let element = document.querySelectorAll('[class*="ChannelChat__ChatVirtualList"]');
 	
 	if (element && element.length >= 1) {
-		startup(element[0]);
+		observe(element[0]);
 	} else
-		setTimeout(try_target, 500);
+		setTimeout(startup, 500);
 }
 
 $(document).ready(() => {
 	console.log("Trying...");
-	try_target();
+	startup();
 });
 
-function startup(target) {
-	/* console.log("Setting up...") */
+function observe(target) {
 	var styleTag = $(`
 			<style>
 			.vjs-button {
@@ -254,53 +264,55 @@ function startup(target) {
 			settings[a] = setting;
 		}
 		
-		/* if (settings["quickemotes"]) {
+		/* if (settings.quickemotes) {
 			$("#chat_extras_btn").parent().append($('<div/>', {'class': 'pnt_quick_emotes', 'id' : 'pnt_quick_emotes'}));
 		} */
 		
 		targetNode = target;
 		let options = {childList: true, subtree: true};
 		let observer = new MutationObserver((mutationList) => {
-			if (settings["markup"] == true || settings["norefer"] == true) {
-				let msgs = document.querySelectorAll('[class*="InlineMessage"]');
-				for (let a = msgs.length-1; a >= 0; a--) {
-					let m = msgs[a];
+			if (settings.markup || settings.norefer) {
+				let msgs = document.querySelectorAll('[class*="Message__StyledSpan"]');
+				for (let a = msgs.length-1; a >= 0; a--) { // a is index, msgs is primary message span list, m is the immediate parent/span container
+					let m = msgs[a].parentElement;
 					
-					if (!m.classList.contains("MarkUp") && settings["markup"] == true) {
+					if (!m.classList.contains("MarkUp") && settings.markup) {
 						m.classList.add("MarkUp");
 						m.innerHTML = markup(m.innerHTML);
 					}
-					if (!m.classList.contains("LinkFix") && settings["norefer"] == true) {
+					if (!m.classList.contains("LinkFix") && settings.norefer) {
 						m.classList.add("LinkFix");
 						
 						/* let lf = m.innerHTML.match(/href(.+?)\" target\=\"\_blank\"/g)[0];
 						lf = lf.replace('href="', '');
 						lf = lf.replace('" target="_blank"', ''); */
 						
-						m.innerHTML = decodeURIComponent(m.innerHTML.replace(/https\:\/\/picarto\.tv\/site\/referrer\?go\=/g, "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"'));
+						m.innerHTML = decodeURIComponent(m.innerHTML.replace("/site/referrer?go=", "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"'));
 						
+						/* m.innerHTML = decodeURIComponent(m.innerHTML.replace(/https\:\/\/picarto\.tv\/site\/referrer\?go\=/g, "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"')); */
 						//m.innerHTML = m.innerHTML.replace(lf, linkfix(lf));
 					}
 				}
 			}
 			
-			let msgc = $("#msgs").children();
+			let msgc = $(document.querySelectorAll('[class*="MessageContainer"]')); // message containers
 			let msgu = msgc.not("[class]");
 			
-			while (msgu.length > 1) {
+			while (msgu.length > 1) { // remove duplicate error/warnings/psa messages in chat
 				msgu[0].remove();
 				msgc = $("#msgs").children();
 				msgu = msgc.not("[class]");
 			}
 			
-			if (settings["maxmsg"] && parseInt(settings["maxmsg"]) > 0) {
-				while (msgc.length > settings["maxmsg"]) {
+			if (settings.maxmsg && parseInt(settings.maxmsg) > 0) {
+				while (msgc.length > parseInt(settings.maxmsg)) {
 					msgc[0].remove();
-					msgc = $("#msgs").children();
+					msgc = $(document.querySelectorAll('[class*="MessageContainer"]'));
 				}
 			}
 		});
-		console.log(targetNode);
+		if (isDevMode())
+			console.log(targetNode);
 		observer.observe(targetNode, options);
 	});
 }
