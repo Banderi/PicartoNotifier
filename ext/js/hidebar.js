@@ -38,6 +38,8 @@ browser.runtime.sendMessage({ message: "tabID" }, t => {
 
 async function update() {
 	
+	/* console.log("Updating...."); */
+	
 	/* console.log(localStorage["auth"]); */
 	/* storage.local.get(null, (data) => {
 		console.log(data);
@@ -71,9 +73,9 @@ async function update() {
 			});
 		}
 		if (settings.expandstrm) {
-			if ($(".mistvideo-container outer_window").children().length < 2)
+			if ($('[class*="StreamVideoContainer"]').children().length < 2)
 				return;
-			$.each($('.mistvideo-container mistvideo-background mistvideo-padding'), function() {
+			$.each($('.mistvideo-custom-controls.settingsIcon'), function() {
 				let e = $(this);
 				if (!e.prev().hasClass("vjs-expand-button")) {
 					addButtons(e);
@@ -129,7 +131,8 @@ function replaceAll(str, find, replace) {
 }
 
 function buttParentName(e) {
-	return e.parent().parent().parent().attr("name");
+	/* return e.parent().parent().find("img").attr("alt"); */
+	return e.parent().parent().find('span').text();
 }
 
 function expand(name) {
@@ -159,7 +162,7 @@ function collapse(name) {
 	$('.vjs-collapse-button').hide();
 }
 function hide(name) {
-	let parse = $(".fa-times-square");
+	let parse = $('i[title="Expand"]');
 	$.each(parse, function() {
 		let e = $(this);
 		let n = buttParentName(e);
@@ -262,6 +265,14 @@ function observe(target) {
 		for (let a in data["SETTINGS"]) {
 			let setting = data["SETTINGS"][a];
 			settings[a] = setting;
+		}
+		
+		if (settings.csstweaks) {
+			var link = document.createElement("link");
+			link.href = "https://raw.githubusercontent.com/Banderi/PicartoNotifier/master/csstweaks.css";
+			link.type = "text/css";
+			link.rel = "stylesheet";
+			document.getElementsByTagName("head")[0].appendChild(link);
 		}
 		
 		/* if (settings.quickemotes) {
