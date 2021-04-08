@@ -67,7 +67,7 @@ async function update() {
 				});
 			});
 		}
-		if (settings.expandstrm) {
+		if (settings.expandstrm && false) {
 			if ($('[class*="StreamVideoContainer"]').children().length < 2)
 				return;
 			$.each($('.mistvideo-custom-controls.settingsIcon'), function() {
@@ -263,9 +263,6 @@ function observe(target) {
 		} */
 		
 		
-		
-		
-		
 		targetNode = target;
 		let options = {childList: true, subtree: true};
 		let observer = new MutationObserver((mutationList) => {
@@ -278,7 +275,7 @@ function observe(target) {
 						setTimeout(function() {
 							m.classList.add("MarkUp");
 							m.innerHTML = markup(m.innerHTML);
-						}, 500);
+						}, 1);
 					}
 					if (!m.classList.contains("LinkFix") && settings.norefer) {
 						setTimeout(function() {
@@ -294,7 +291,7 @@ function observe(target) {
 							
 							/* m.innerHTML = decodeURIComponent(m.innerHTML.replace(/https\:\/\/picarto\.tv\/site\/referrer\?go\=/g, "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"')); */
 							//m.innerHTML = m.innerHTML.replace(lf, linkfix(lf));
-						}, 500);
+						}, 1);
 					}
 				}
 			}

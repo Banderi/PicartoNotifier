@@ -12,6 +12,7 @@
 	"maxmsg" : "0",
 	"fullscreenfix" : false,
 	"expandstrm" : true,
+	"splitchatbox" : true,
 	"norefer" : true,
 	"updateinterval": 5,
 	"maxnames" : 100,

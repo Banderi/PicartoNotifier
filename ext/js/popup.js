@@ -867,9 +867,20 @@ function initSettings(callback) {
 	});
 }
 
-function toggleSetting(s, cond) {
+function toggleSetting(s, cond, err = false) {
 	let o = $("#" + s);
+	
 	o.prop('disabled', cond);
+	if (!cond && !err)
+		o.parent().removeClass('disabled');
+	else
+		o.parent().addClass('disabled');
+	
+	if (!cond || !err)
+		o.parent().removeClass('error');
+	else if (err)
+		o.parent().addClass('error');
+	
 	/* if (!cond)
 		o.parent().show();
 	else
@@ -877,24 +888,33 @@ function toggleSetting(s, cond) {
 }
 function toggleChildSettings() {
 	toggleSetting("alert", !settings.notifications);
-	/* toggleSetting("dingvolume", !settings.notifications || !settings.alert); */
+	toggleSetting("dingvolume", !settings.notifications || !settings.alert);
 	toggleSetting("badgenotif", settings.picartobar);
 	toggleSetting("picartobar", settings.badgenotif);
+	
+	// disable broken settings by force.
+	toggleSetting("badgenotif", true, true);
+	toggleSetting("expandstrm", true, true);
+	toggleSetting("splitchatbox", true, true);
+	toggleSetting("streamer", true, true);
+	toggleSetting("oauthshow", true, true);
 }
 
 function startup(callback) {
-	
 	storage.sync.get(["SETTINGS"], (data) => {
 		for (s in data["SETTINGS"]) {
 			settings[s] = data["SETTINGS"][s];
 		}
 		
+		// set HTML elements with setting from storage
 		for (s in settings) {
 			let obj = $("#" + s);
 			if(obj.attr("type") === "checkbox") {
 				obj[0].checked = settings[s];
 			} else {
 				obj.val(settings[s]);
+				if (s == "badgecolor")
+					$("#badgecolor").next().css("background-color", settings[s]);
 			}
 		}
 		
@@ -903,6 +923,13 @@ function startup(callback) {
 		storage.sync.get(["RECENTNAMES"], (data) => {
 			if(data["RECENTNAMES"])
 				recentnames = data["RECENTNAMES"];
+		});
+		
+		storage.local.get(["OAUTH"], (data) => {
+		if(data["OAUTH"]) {
+				token = data["OAUTH"];
+				$("#oauthtoken").val(token);
+			}
 		});
 	});
 	
@@ -927,8 +954,8 @@ function saveSetting(s) {
 		
 		toggleChildSettings();
 		
-		if(!browser.runtime.lastError){
-			console.log('Saved', ticket, contents);
+		if(browser.runtime.lastError){
+			console.log(browser.runtime.lastError);
 		} 
 		
 		console.log("Settings updated!");

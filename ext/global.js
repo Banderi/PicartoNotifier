@@ -11,7 +11,7 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
-var motd = "Fixed for new goddamn layout";
+var motd = "The final update... (?)";
 
 var livecount = 0;
 var invitecount = 0;

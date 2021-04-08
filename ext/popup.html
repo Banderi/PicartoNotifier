@@ -15,11 +15,11 @@
 		<div class="side_btn t_main" id="t_main">
 			<img src="graphics/live.png" class="side_icon">
 		</div>
-		<div class="side_btn t_notifications" id="t_notifications">
+		<div class="side_btn t_notifications disabled error" id="t_notifications">
 			<img src="graphics/notifications.png" class="side_icon">
 		</div>
 			<div id="notif_badge">25</div>
-		<div class="side_btn t_recordings" id="t_recordings">
+		<div class="side_btn t_recordings disabled error" id="t_recordings">
 			<img src="graphics/recordings.png" class="side_icon">
 		</div>
 		<div class="side_btn t_settings" id="t_settings">
@@ -105,12 +105,20 @@
 			<div class="submain">
 				<!-- <div class="submain heading streaming">Settings</div> -->
 				<div class="setting">
+					<input type="number" name="updateinterval" class="numberbox" id="updateinterval" value="5" min="5" max="3600" step="1"><span class="setting_text">Primary refresh interval</span>
+					<span class="setting_subtext">How frequently the app refreshes and polls Picarto's endpoints, in seconds</span>
+				</div>
+				<div class="setting">
 					<input type="checkbox" class="checkslider" id="notifications"><span class="setting_text">Desktop notifications</span>
 					<span class="setting_subtext">Real-time alert when people start streaming</span>
 				</div>
 				<div class="setting">
 					<input type="checkbox" class="checkslider" id="alert"><span class="setting_text">Sound notifications</span>
 					<span class="setting_subtext">Play a sound along with desktop notifications</span>
+				</div>
+				<div class="setting">
+					<input type="number" name="dingvolume" class="numberbox" id="dingvolume" value="100" min="0" max="100" step="1"><span class="setting_text">Sound notification volume</span>
+					<span class="setting_subtext"></span>
 				</div>
 				<div class="setting">
 					<input type="checkbox" class="checkslider" id="picartobar"><span class="setting_text">Disable native notifications</span>
@@ -129,24 +137,17 @@
 					<span class="setting_subtext">Use Chrome's synchronized extension storage for settings across devices</span>
 				</div> -->
 				
-				<!-- <div class="setting">
+				<div class="setting">
 					<input type="checkbox" class="checkslider" id="oauthshow"><span class="setting_text">Show OAuth token</span>
 					<div id="oauthhidden" class="input-group oauthtoken">
 						<input type="textbox" class="form-control nooutline" id="oauthtoken" spellcheck="false"><span class="input-group-addon btnBase Dark displayCell oauthtoken" id="oauthconfirm">Save</button>
 					</div>
 					<span class="setting_subtext">Manually edit or clear the OAuth token</span>
-				</div> -->
-				<div class="setting">
-					<input type="text" class="colortext" id="badgecolor" value="#33aa33"><span class="setting_text">Notification Badge color</span>
-					<span class="setting_subtext"></span>
 				</div>
+
 				<div class="setting">
-					<input type="number" class="numberbox" id="dingvolume" value="100" min="0" max="100" step="1"><span class="setting_text">Sound notification volume</span>
+					<input type="text" name="badgecolor" class="colortext" id="badgecolor" value="#33aa33"><span class="setting_text">Notification Badge color</span>
 					<span class="setting_subtext"></span>
-				</div>
-				<div class="setting">
-					<input type="number" class="numberbox" id="updateinterval" value="5" min="5" max="3600" step="1"><span class="setting_text">Primary refresh interval</span>
-					<span class="setting_subtext">How often the apps refreshes the list of live channels, in seconds</span>
 				</div>
 			</div>
 			<div class="submain">
@@ -176,10 +177,10 @@
 					<input type="checkbox" class="checkslider" id="expandstrm"><span class="setting_text">Quick stream expand button</span>
 					<span class="setting_subtext">Add back the quick stream expand/hide buttons in the player</span>
 				</div>
-				<!-- <div class="setting">
-					<input type="checkbox" class="checkslider" id="fullscreenfix"><span class="setting_text">Fix fullscreen</span>
-					<span class="setting_subtext">Set player to HLS automatically to fix fullscreen reloading the stream</span>
-				</div> -->
+				<div class="setting">
+					<input type="checkbox" class="checkslider" id="splitchatbox"><span class="setting_text">Split chat box</span>
+					<span class="setting_subtext">Append userlist next to chat box even when window is narrow</span>
+				</div>
 				<div class="setting">
 					<input type="checkbox" class="checkslider" id="norefer"><span class="setting_text">No referrer in chat links</span>
 					<span class="setting_subtext">Seamlessly open the link's destination for in-chat posts</span>
@@ -204,8 +205,24 @@
 					Main framework by Banderi/Federico Barlotti (2018) with help from <strong>Github.com/Clarvel</strong><br>
 					Color picker library by <strong>Github.com/laktek</strong><br>
 					Autocomplete library by <strong>Github.com/10w042</strong>
+					<!-- <br><br> -->
+					<!-- All copyrighted themes, styles, scripts and graphics are (c) Picarto.TV -->
 					<br><br>
-					All copyrighted themes, styles, scripts and graphics are (c) Picarto.TV
+					<span class="about_notice">
+					<strong>
+					4/8/2021<br>
+					Due to Picarto's latest update in February some settings - marked as red - are currently broken, unfinished, impossible to implement, or all of the above.<br>
+					Although I wish I could dedicate more time over these, I can not promise this will ever be done.
+					I have been disenchanted and saddened by the current state, the management and the unwillingness to pay heed to feedback that the staff of Picarto.tv has demonstrated,
+					particularly after these last few, disastrous, updates.<br>
+					<!-- I have been disenchanted by the service and have stopped supporting it, and will therefore be unable to test and fix Premium-related features like multistream invites.<br> -->
+					If anyone wishes to contribute to future fixes or try their hand at these, I will most happily accept PRs on the <a href="https://github.com/Banderi/PicartoNotifier">project repo</a>.
+					<br><br>
+					Thank you all for your amazing support over the years,
+					I hope I've been able to provide at the very least some level of improvement over the user experience and overall usability of the service.<br>
+					<span style="display: block;text-align:right;padding-right: 10px;">- Federico Barlotti</span>
+					</strong>
+					</span>
 				</div>
 			</div>
 		</div>
