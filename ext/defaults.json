@@ -1,0 +1,19 @@
+{
+	"notifications" : true,
+	"alert" : false,
+	"streamer" : false,
+	"picartobar" : false,
+	"badgenotif" : false,
+	"updatemsg" : true,
+	"badgecolor" : "#33aa33",
+	"dingvolume" : 100,
+	
+	"markup" : true,
+	"maxmsg" : "0",
+	"fullscreenfix" : false,
+	"expandstrm" : true,
+	"norefer" : true,
+	"updateinterval": 5,
+	"maxnames" : 100,
+	"csstweaks" : true
+}

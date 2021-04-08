@@ -546,27 +546,22 @@ function fetch_channel_data(auth_bear) {
 }
 
 // get default settings or fetch from storage
-let defaults = {
-	"notifications" : true,
-	"alert" : false,
-	"streamer" : false,
-	"picartobar" : false,
-	"badgenotif" : false,
-	"updatemsg" : true,
-	"badgecolor" : "#33aa33",
-	"dingvolume" : 100,
-	
-	"markup" : true,
-	"maxmsg" : "0",
-	"fullscreenfix" : false,
-	"expandstrm" : true,
-	"norefer" : true,
-	"updateinterval": 5,
-	"maxnames" : 100
-};
-
+let defaults = {};
 var settings = {};
-settings = $.extend(true, {}, defaults);
+function initSettings(callback) {
+	const url = browser.runtime.getURL('defaults.json');
+	fetch(url)
+		.then(e => e.json())
+		.then(j =>
+	{
+		defaults = j;
+		settings = {
+			...defaults
+		};
+		callback();
+	});
+}
+
 var updater = null;
 
 // main update function
@@ -581,7 +576,7 @@ function update() {
 	updater = setTimeout(update, settings.updateinterval * 1000);
 }
 
-function getSettings() {
+function startup() {
 	storage.sync.get(["SETTINGS"], (data) => {
 		for (let a in data["SETTINGS"]) {
 			let setting = data["SETTINGS"][a];
@@ -602,11 +597,9 @@ function getSettings() {
 }
 
 function restart() {
-	settings = $.extend(true, {}, defaults);
-	getSettings();
+	initSettings(startup);
 }
-
-getSettings();
+restart();
 
 // create audio alert object
 var ding = new Audio('audio/ding.ogg');

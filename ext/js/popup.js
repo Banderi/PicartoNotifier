@@ -851,26 +851,21 @@ function update() {
 }
 
 // get default settings or fetch from storage
-let defaults = {
-	"notifications" : true,
-	"alert" : false,
-	"streamer" : false,
-	"picartobar" : false,
-	"badgenotif" : false,
-	"updatemsg" : true,
-	"badgecolor" : "#33aa33",
-	"dingvolume" : 100,
-	
-	"markup" : true,
-	"maxmsg" : "0",
-	"fullscreenfix" : false,
-	"expandstrm" : true,
-	"norefer" : true,
-	"updateinterval": 5000,
-	"maxnames" : 100
-};
-
+let defaults = {};
 var settings = {};
+function initSettings(callback) {
+	const url = browser.runtime.getURL('defaults.json');
+	fetch(url)
+		.then(e => e.json())
+		.then(j =>
+	{
+		defaults = j;
+		settings = {
+			...defaults
+		};
+		callback();
+	});
+}
 
 function toggleSetting(s, cond) {
 	let o = $("#" + s);
@@ -887,9 +882,7 @@ function toggleChildSettings() {
 	toggleSetting("picartobar", settings.badgenotif);
 }
 
-function getSettings(callback) {
-	settings = {};
-	settings = $.extend(true, {}, defaults);
+function startup(callback) {
 	
 	storage.sync.get(["SETTINGS"], (data) => {
 		for (s in data["SETTINGS"]) {
@@ -920,163 +913,186 @@ function getSettings(callback) {
 		}
 	});
 }
-function saveSetting(setting) {
-	let obj = $("#" + setting);
+function saveSetting(s) {
+	let obj = $("#" + s);
 	if (obj.attr("type") === "checkbox")
-		settings[setting] = obj[0].checked;
+		settings[s] = obj[0].checked;
 	else
-		settings[setting] = obj.val();
-	storage.sync.set({"SETTINGS" : settings});
+		settings[s] = obj.val();
+	storage.sync.set({"SETTINGS" : settings}, function() {
+		
+		let msg = {"message" : "settingChanged"};
+		msg[s] = settings[s];
+		browser.runtime.sendMessage(msg);
+		
+		toggleChildSettings();
+		
+		if(!browser.runtime.lastError){
+			console.log('Saved', ticket, contents);
+		} 
+		
+		console.log("Settings updated!");
+		
+		
+		/* storage.sync.get(["SETTINGS"], (data) => {
+			console.log(data["SETTINGS"]);
+		}); */
+	});
 	
-	let msg = {"message" : "settingChanged"};
-	msg[setting] = settings[setting];
-	browser.runtime.sendMessage(msg);
 	
-	toggleChildSettings();
 }
-getSettings();
 
 // setup popup window
 $(document).ready(function() {
-	if (isDevMode()) {
-		console.log("STARTUP!");
-	}
 	
-	update();
-	var updater = setInterval(update, 1000);
-	
-	// register autocompletion
-	var predictable = $('#channelToInvite_txt')[0];
-	$('#channelToInvite_txt').emailautocomplete({
-		//suggClass: "custom-classname", //default: "eac-sugg". your custom classname (optional)
-		domains: recentnames //additional domains (optional)
-	});
-	
-	// register color picker
-	$('#badgecolor').colorPicker({
-		onColorChange : function(id, newValue) {
-			/* console.log("ID: " + id + " has been changed to " + $("#badgecolor").val()); */
-			saveSetting("badgecolor");
+	initSettings(function() {
+		if (isDevMode()) {
+			console.log("SETTINGS LOADED!");
 		}
-	});
-	
-	// setup navbar
-	$(".side_btn").on("click", function() {
-		$(".side_btn").removeClass("active");
-		$(".tab").removeClass("active");
-		$("." + $(this).attr('id')).addClass("active");
-	});
-	
-	if(settings.badgenotif)
-		$(".t_notifications").addClass("active");
-	else
-		$(".t_main").addClass("active");
-	
-	// register settings buttons
-	for (s in settings) {
-		let setting = s;
-		if (s == "badgecolor")
-			continue;
-		let obj = $("#" + s);
-		if (obj.attr("type") == "number" || obj.attr("type") == "text") {
-			obj.on("input", function() {
-				saveSetting(setting);
-			});
-		}
-		else {
-			obj.on("click", function() {
-				saveSetting(setting);
-			});
-		}
-	}
-	
-	// register OAuth override box
-	$("#oauthhidden").hide();
-	$("#oauthshow").on("click", function() {
-		$("#oauthhidden").toggle();
-	});
-	$("#oauthconfirm").on("click", function() {
-		token = $("#oauthtoken").val();
-		storage.local.set({"OAUTH" : token});
 		
-		$("#oauthconfirm").addClass("clicked");
-		setTimeout(function() {
-			$("#oauthconfirm").removeClass("clicked");
-		}, 100);
-	});
-	
-	// register streamer mode button
-	$("#streamer").on("click", function() {
-		saveSetting("streamer");
-		updateAdvanced();
-	});
-	updateAdvanced();
-	
-	// register notification purge button
-	$("#removeall").on("click", function() {
-		if (notifcache[0]) {
-			for (n in notifcache) {
-				postAPI("user/notifications/" + notifcache[n]["uuid"] + "/delete");
-			}
-			notifcache = {};
-			storage.local.set({"API_NOTIFICATIONS" : notifcache});
-			$('#con_notifications').empty();
-			let cachestamp = Date.now();
-			browser.storage.local.set({"CACHESTAMP" : cachestamp});
-		}
-	});
-	
-	// register OAuth connection button
-	$(".oauth_connect").on("click", function() {
-		let msg = {"message" : "oauth"};
-		browser.runtime.sendMessage(msg, function(r) {
-			$(".dashboard-enabled").show();
-			$(".dashboard-disabled").hide();
-			$(".ms_inv").show();
-			getSettings();
+		// register autocompletion
+		var predictable = $('#channelToInvite_txt')[0];
+		$('#channelToInvite_txt').emailautocomplete({
+			//suggClass: "custom-classname", //default: "eac-sugg". your custom classname (optional)
+			domains: recentnames //additional domains (optional)
 		});
-	});
-	$(".oauth_manual").on("click", function() {
-		$(".side_btn").removeClass("active");
-		$(".tab").removeClass("active");
-		$(".t_settings").addClass("active");
-		$("#oauthshow")[0].checked = true;
-		setTimeout(function() { $("#oauthtoken").get(0).focus(); }, 100);
-		$("#oauthhidden").show();
-		$("#oauthhidden").addClass("clicked");
-		setTimeout(function() {
-			$("#oauthhidden").removeClass("clicked");
-		}, 500);
-	});
-	
-	// register Purge Settings button
-	$("#purge").on("click", function() {
-		storage.local.clear();
-		storage.sync.clear();
-		getSettings();
-		let msg = {"message" : "purgeAll"};
-		browser.runtime.sendMessage(msg);
-		$(".colorPicker-picker").css("background-color", "#33aa33")
 		
-		recentnames = [];
-		peoplelive = false;
-		multistream = false;
-		token = "";
-		ownname = "";
+		// register color picker
+		$('#badgecolor').colorPicker({
+			onColorChange : function(id, newValue) {
+				/* console.log("ID: " + id + " has been changed to " + $("#badgecolor").val()); */
+				saveSetting("badgecolor");
+			}
+		});
+		
+		// setup navbar
+		$(".side_btn").on("click", function() {
+			$(".side_btn").removeClass("active");
+			$(".tab").removeClass("active");
+			$("." + $(this).attr('id')).addClass("active");
+		});
+		
+		if(settings.badgenotif)
+			$(".t_notifications").addClass("active");
+		else
+			$(".t_main").addClass("active");
+		
+		// register settings buttons
+		for (s in settings) {
+			let setting = s;
+			if (s == "badgecolor")
+				continue;
+			let obj = $("#" + s);
+			if (obj.attr("type") == "number" || obj.attr("type") == "text") {
+				obj.on("input", function() {
+					saveSetting(setting);
+				});
+			}
+			else {
+				obj.on("click", function() {
+					saveSetting(setting);
+				});
+			}
+		}
+		
+		// register OAuth override box
+		$("#oauthhidden").hide();
+		$("#oauthshow").on("click", function() {
+			$("#oauthhidden").toggle();
+		});
+		$("#oauthconfirm").on("click", function() {
+			token = $("#oauthtoken").val();
+			storage.local.set({"OAUTH" : token});
+			
+			$("#oauthconfirm").addClass("clicked");
+			setTimeout(function() {
+				$("#oauthconfirm").removeClass("clicked");
+			}, 100);
+		});
+		
+		// register streamer mode button
+		$("#streamer").on("click", function() {
+			saveSetting("streamer");
+			updateAdvanced();
+		});
+		updateAdvanced();
+		
+		// register notification purge button
+		$("#removeall").on("click", function() {
+			if (notifcache[0]) {
+				for (n in notifcache) {
+					postAPI("user/notifications/" + notifcache[n]["uuid"] + "/delete");
+				}
+				notifcache = {};
+				storage.local.set({"API_NOTIFICATIONS" : notifcache});
+				$('#con_notifications').empty();
+				let cachestamp = Date.now();
+				browser.storage.local.set({"CACHESTAMP" : cachestamp});
+			}
+		});
+		
+		// register OAuth connection button
+		$(".oauth_connect").on("click", function() {
+			let msg = {"message" : "oauth"};
+			browser.runtime.sendMessage(msg, function(r) {
+				$(".dashboard-enabled").show();
+				$(".dashboard-disabled").hide();
+				$(".ms_inv").show();
+				getSettings();
+			});
+		});
+		$(".oauth_manual").on("click", function() {
+			$(".side_btn").removeClass("active");
+			$(".tab").removeClass("active");
+			$(".t_settings").addClass("active");
+			$("#oauthshow")[0].checked = true;
+			setTimeout(function() { $("#oauthtoken").get(0).focus(); }, 100);
+			$("#oauthhidden").show();
+			$("#oauthhidden").addClass("clicked");
+			setTimeout(function() {
+				$("#oauthhidden").removeClass("clicked");
+			}, 500);
+		});
+		
+		// register Purge Settings button
+		$("#purge").on("click", function() {
+			storage.local.clear();
+			storage.sync.clear();
+			getSettings();
+			let msg = {"message" : "purgeAll"};
+			browser.runtime.sendMessage(msg);
+			$(".colorPicker-picker").css("background-color", "#33aa33")
+			
+			recentnames = [];
+			peoplelive = false;
+			multistream = false;
+			token = "";
+			ownname = "";
 
-		livecache = {};
-		multicache = {};
-		usercache = {};
-		notifcache = {};
-		recordcache = {};
+			livecache = {};
+			multicache = {};
+			usercache = {};
+			notifcache = {};
+			recordcache = {};
 
-		$(".dashboard-enabled").hide();
-		$(".dashboard-disabled").show();
+			$(".dashboard-enabled").hide();
+			$(".dashboard-disabled").show();
+		});
+		
+		// get app version
+		var manifestData = browser.runtime.getManifest();
+		$("#version").text("ver " + manifestData.version);
+		
+		
+		
+		startup();
+		if (isDevMode()) {
+			console.log("STARTUP!");
+		}
+		
+		update();
+		var updater = setInterval(update, 1000);
 	});
-	
-	// get app version
-	var manifestData = browser.runtime.getManifest();
-	$("#version").text("ver " + manifestData.version);
 });
 
 

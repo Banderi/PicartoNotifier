@@ -9,26 +9,21 @@ function isDevMode() {
 }
 
 // get default settings or fetch from storage
-let defaults = {
-	"notifications" : true,
-	"alert" : false,
-	"streamer" : false,
-	"picartobar" : false,
-	"badgenotif" : false,
-	"updatemsg" : true,
-	"badgecolor" : "#33aa33",
-	"dingvolume" : 100,
-	
-	"markup" : true,
-	"maxmsg" : "0",
-	"fullscreenfix" : false,
-	"expandstrm" : true,
-	"norefer" : true,
-	"updateinterval": 5,
-	"maxnames" : 100
-};
-
-var settings = defaults;
+let defaults = {};
+var settings = {};
+function initSettings(callback) {
+	const url = browser.runtime.getURL('defaults.json');
+	fetch(url)
+		.then(e => e.json())
+		.then(j =>
+	{
+		defaults = j;
+		settings = {
+			...defaults
+		};
+		callback();
+	});
+}
 
 var tabID = null;
 browser.runtime.sendMessage({ message: "tabID" }, t => {
@@ -227,20 +222,6 @@ function addButtons(e) {
 var try_interval = null;
 var targetNode = null;
 
-function startup() {
-	let element = document.querySelectorAll('[class*="ChannelChat__ChatVirtualList"]');
-	
-	if (element && element.length >= 1) {
-		observe(element[0]);
-	} else
-		setTimeout(startup, 500);
-}
-
-$(document).ready(() => {
-	console.log("Trying...");
-	startup();
-});
-
 function observe(target) {
 	var styleTag = $(`
 			<style>
@@ -260,24 +241,30 @@ function observe(target) {
 	$('html > head').append(styleTag);
 	
 	/* console.log("Getting settings...") */
-	storage.sync.get("SETTINGS", (data) => {
+	storage.sync.get("SETTINGS", async (data) => {
 		console.log("Settings loaded!!")
 		for (let a in data["SETTINGS"]) {
 			let setting = data["SETTINGS"][a];
 			settings[a] = setting;
 		}
 		
-		if (settings.csstweaks) {
-			var link = document.createElement("link");
-			link.href = "https://raw.githubusercontent.com/Banderi/PicartoNotifier/master/csstweaks.css";
-			link.type = "text/css";
-			link.rel = "stylesheet";
-			document.getElementsByTagName("head")[0].appendChild(link);
-		}
+		if (settings.csstweaks) (async function(){
+			let res = await fetch('https://raw.githubusercontent.com/Banderi/PicartoNotifier/master/csstweaks.css');
+			let body = await res.text();
+			
+			var style = document.createElement("style");
+			style.innerHTML = body;
+			document.getElementsByTagName("head")[0].appendChild(style);
+		}) ();
 		
-		/* if (settings.quickemotes) {
-			$("#chat_extras_btn").parent().append($('<div/>', {'class': 'pnt_quick_emotes', 'id' : 'pnt_quick_emotes'}));
+		// broken.......
+		/* if (settings.chatslider) {
+			$(".styled__PopoutChatBoxContainer-sc-1y6xjog-1").children().eq(0).append("<iframe src='https://picarto.tv/chatpopout/Banderi/public' />")
 		} */
+		
+		
+		
+		
 		
 		targetNode = target;
 		let options = {childList: true, subtree: true};
@@ -288,20 +275,26 @@ function observe(target) {
 					let m = msgs[a].parentElement;
 					
 					if (!m.classList.contains("MarkUp") && settings.markup) {
-						m.classList.add("MarkUp");
-						m.innerHTML = markup(m.innerHTML);
+						setTimeout(function() {
+							m.classList.add("MarkUp");
+							m.innerHTML = markup(m.innerHTML);
+						}, 500);
 					}
 					if (!m.classList.contains("LinkFix") && settings.norefer) {
-						m.classList.add("LinkFix");
-						
-						/* let lf = m.innerHTML.match(/href(.+?)\" target\=\"\_blank\"/g)[0];
-						lf = lf.replace('href="', '');
-						lf = lf.replace('" target="_blank"', ''); */
-						
-						m.innerHTML = decodeURIComponent(m.innerHTML.replace("/site/referrer?go=", "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"'));
-						
-						/* m.innerHTML = decodeURIComponent(m.innerHTML.replace(/https\:\/\/picarto\.tv\/site\/referrer\?go\=/g, "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"')); */
-						//m.innerHTML = m.innerHTML.replace(lf, linkfix(lf));
+						setTimeout(function() {
+							m.classList.add("LinkFix");
+							
+							/* let lf = m.innerHTML.match(/href(.+?)\" target\=\"\_blank\"/g)[0];
+							lf = lf.replace('href="', '');
+							lf = lf.replace('" target="_blank"', ''); */
+							
+							m.innerHTML = decodeURIComponent(m.innerHTML.replace('href="/site/referrer?go=', 'href="').replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"'));
+							
+							/* m.innerHTML = m.innerHTML; */
+							
+							/* m.innerHTML = decodeURIComponent(m.innerHTML.replace(/https\:\/\/picarto\.tv\/site\/referrer\?go\=/g, "").replace(/\&amp\;ref\=(.+?)\" target\=\"\_blank\"/g, '" target="_blank"')); */
+							//m.innerHTML = m.innerHTML.replace(lf, linkfix(lf));
+						}, 500);
 					}
 				}
 			}
@@ -327,3 +320,18 @@ function observe(target) {
 		observer.observe(targetNode, options);
 	});
 }
+
+function startup() {
+	let element = document.querySelectorAll('[class*="ChannelChat__ChatVirtualList"]');
+	
+	if (element && element.length >= 1) {
+		observe(element[0]);
+	} else
+		setTimeout(startup, 500);
+}
+
+$(document).ready(() => {
+	console.log("Starting up...");
+	
+	initSettings(startup);
+});
