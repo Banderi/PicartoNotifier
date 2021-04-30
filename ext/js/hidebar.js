@@ -271,7 +271,7 @@ function observe(target) {
 				for (let a = msgs.length-1; a >= 0; a--) { // a is index, msgs is primary message span list, m is the immediate parent/span container
 					let m = msgs[a].parentElement;
 					
-					if (!m.classList.contains("MarkUp") && settings.markup) {
+					if (!m.classList.contains("MarkUp") && settings.markup & false) {
 						setTimeout(function() {
 							m.classList.add("MarkUp");
 							m.innerHTML = markup(m.innerHTML);

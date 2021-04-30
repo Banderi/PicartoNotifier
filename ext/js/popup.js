@@ -895,6 +895,7 @@ function toggleChildSettings() {
 	// disable broken settings by force.
 	toggleSetting("badgenotif", true, true);
 	toggleSetting("expandstrm", true, true);
+	toggleSetting("markup", true, true);
 	toggleSetting("splitchatbox", true, true);
 	toggleSetting("streamer", true, true);
 	toggleSetting("oauthshow", true, true);
