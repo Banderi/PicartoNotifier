@@ -11,7 +11,7 @@ function isDevMode() {
     return !('update_url' in browser.runtime.getManifest());
 }
 
-var motd = "The final update... (?)";
+var motd = "I lied.";
 
 var livecount = 0;
 var invitecount = 0;
@@ -487,8 +487,59 @@ function fetch_from_cookies() {
 		} // failure callback
 	);
 }
-function fetch_channel_data(auth_bear) {
+async function fetch_channel_data(auth_bear) {
+	// Upstream API
+	$.ajax({
+		url: "https://api.picarto.tv/api/v1/online",
+		type:"GET",
+		contentType:"application/json; charset=utf-8",
+		beforeSend: function (xhr) {
+			xhr.setRequestHeader('authorization', auth_bear);
+		},
+		dataType:"json",
+		success: function(online_list) {
+			
+			// create a new Promise objecy to have an async block here because jQuery ($.ajax) does not readily support async callbacks.
+			return new Promise(async(resolve, reject)=>{
+				exploreData = [];
+				for (i in online_list) {
+					let channelData = online_list[i];
+					if (channelData.following) {
+						
+						let avatar_url = "";
+						await $.ajax({
+							url: "https://api.picarto.tv/api/v1/channel/id/" + channelData.user_id,
+							type:"GET",
+							contentType:"application/json; charset=utf-8",
+							beforeSend: function (xhr) {
+								xhr.setRequestHeader('authorization', auth_bear);
+							},
+							dataType:"json",
+							success: function(channel_info) { avatar_url = channel_info.avatar; },
+							error: function(data) { if (isDevMode()) console.log(data); }
+						});
+						
+						exploreData.push({
+							"channel_name": channelData.name,
+							"avatar": avatar_url
+						})
+					}
+				}
+				
+				updateLive(()=>{
+					/* updateAPI(()=>{ */
+						updateBadge(()=>{
+							updateMOTD(); // done!
+						})
+					/* }) */
+				})
+			});
+		},
+		error: function(data) { if (isDevMode()) console.log(data); }
+	});
+	return;
 	
+	// Old API seemingly does not work anymore.
 	let querytosend = {
 		query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    __typename\n  }\n}\n",
 		variables: {
@@ -497,7 +548,6 @@ function fetch_channel_data(auth_bear) {
 			"q": ""
 		}
 	}
-	
 	$.ajax({
 		url: "https://ptvintern.picarto.tv/ptvapi",
 		type:"POST",
