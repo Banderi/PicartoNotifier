@@ -488,44 +488,31 @@ function fetch_from_cookies() {
 	);
 }
 async function fetch_channel_data(auth_bear) {
-	// Upstream API
-	$.ajax({
-		url: "https://api.picarto.tv/api/v1/online",
-		type:"GET",
-		contentType:"application/json; charset=utf-8",
-		beforeSend: function (xhr) {
-			xhr.setRequestHeader('authorization', auth_bear);
-		},
-		dataType:"json",
-		success: function(online_list) {
-			
-			// create a new Promise objecy to have an async block here because jQuery ($.ajax) does not readily support async callbacks.
-			return new Promise(async(resolve, reject)=>{
+	
+	// official API -- does not work with the immediate webpage auth token.
+	if (false) {
+		$.ajax({
+			url: "https://api.picarto.tv/api/v1/user/following?page=1&priority_online=true",
+			type:"GET",
+			contentType:"application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('Authorization', auth_bear);
+			},
+			dataType:"json",
+			success: function(following_list) {
+				
 				exploreData = [];
-				for (i in online_list) {
-					let channelData = online_list[i];
-					if (channelData.following) {
-						
-						let avatar_url = "";
-						await $.ajax({
-							url: "https://api.picarto.tv/api/v1/channel/id/" + channelData.user_id,
-							type:"GET",
-							contentType:"application/json; charset=utf-8",
-							beforeSend: function (xhr) {
-								xhr.setRequestHeader('authorization', auth_bear);
-							},
-							dataType:"json",
-							success: function(channel_info) { avatar_url = channel_info.avatar; },
-							error: function(data) { if (isDevMode()) console.log(data); }
-						});
-						
+				for (i in following_list) {
+					
+					let channelData = following_list[i];
+					if (channelData.online) {
+						console.log(channelData);
 						exploreData.push({
 							"channel_name": channelData.name,
-							"avatar": avatar_url
+							"avatar": channelData.avatar
 						})
 					}
 				}
-				
 				updateLive(()=>{
 					/* updateAPI(()=>{ */
 						updateBadge(()=>{
@@ -533,15 +520,66 @@ async function fetch_channel_data(auth_bear) {
 						})
 					/* }) */
 				})
-			});
-		},
-		error: function(data) { if (isDevMode()) console.log(data); }
-	});
-	return;
+			},
+			error: function(data) { if (isDevMode()) console.log(data); }
+		});
+	}
 	
-	// Old API seemingly does not work anymore.
+	// Upstream API -- does not work because some users are erroneously reported as "following" even when they are not.
+	if (false) {
+		$.ajax({
+			url: "https://api.picarto.tv/api/v1/online",
+			type:"GET",
+			contentType:"application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('authorization', auth_bear);
+			},
+			dataType:"json",
+			success: function(online_list) {
+				
+				// create a new Promise objecy to have an async block here because jQuery ($.ajax) does not readily support async callbacks.
+				return new Promise(async(resolve, reject)=>{
+					exploreData = [];
+					for (i in online_list) {
+						
+						let channelData = online_list[i];
+						if (channelData.following) {
+							let avatar_url = "";
+							await $.ajax({
+								url: "https://api.picarto.tv/api/v1/channel/id/" + channelData.user_id,
+								type:"GET",
+								contentType:"application/json; charset=utf-8",
+								beforeSend: function (xhr) {
+									xhr.setRequestHeader('authorization', auth_bear);
+								},
+								dataType:"json",
+								success: function(channel_info) { avatar_url = channel_info.avatar; },
+								error: function(data) { if (isDevMode()) console.log(data); }
+							});
+							
+							exploreData.push({
+								"channel_name": channelData.name,
+								"avatar": avatar_url
+							})
+						}
+					}
+					
+					updateLive(()=>{
+						/* updateAPI(()=>{ */
+							updateBadge(()=>{
+								updateMOTD(); // done!
+							})
+						/* }) */
+					})
+				});
+			},
+			error: function(data) { if (isDevMode()) console.log(data); }
+		});
+	}
+	
+	// Direct access/webpage internal API.
 	let querytosend = {
-		query: "query ($first: Int!, $page: Int!, $q: String) {\n  following(first: $first, page: $page, q: $q, orderBy: {field: \"last_live\", order: DESC}) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    __typename\n  }\n}\n",
+		query: 'query ($first: Int!, $page: Int!, $q: String) {\n  bannedChannels(\n    first: $first\n    page: $page\n    q: $q\n    orderBy: {field: \n"last_live", order: DESC}\n  ) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    banned\n    __typename\n  }\n}',
 		variables: {
 			"first": settings.maxnames,
 			"page": 1,
