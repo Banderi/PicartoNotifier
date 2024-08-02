@@ -579,7 +579,7 @@ async function fetch_channel_data(auth_bear) {
 	
 	// Direct access/webpage internal API.
 	let querytosend = {
-		query: 'query ($first: Int!, $page: Int!, $q: String) {\n  bannedChannels(\n    first: $first\n    page: $page\n    q: $q\n    orderBy: {field: \n"last_live", order: DESC}\n  ) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    online\n    banned\n    __typename\n  }\n}',
+		query: 'query ($first: Int!, $page: Int!, $q: String) {\n  followers(\n    first: $first\n    page: $page\n    q: $q\n    orderBy: {field: \n"last_live", order: DESC}\n  ) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    notification\n    online\n    banned\n    __typename\n  }\n}',
 		variables: {
 			"first": settings.maxnames,
 			"page": 1,
