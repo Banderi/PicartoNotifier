@@ -15,7 +15,7 @@ var motd = "I lied.";
 
 var livecount = 0;
 var invitecount = 0;
-var ownname = "";
+var ownid = -1;
 var exploreData = {};
 var notifications = 0;
 
@@ -577,60 +577,122 @@ async function fetch_channel_data(auth_bear) {
 		});
 	}
 	
-	// Direct access/webpage internal API.
-	let querytosend = {
-		query: 'query ($first: Int!, $page: Int!, $q: String) {\n  followers(\n    first: $first\n    page: $page\n    q: $q\n    orderBy: {field: \n"last_live", order: DESC}\n  ) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    notification\n    online\n    banned\n    __typename\n  }\n}',
-		variables: {
-			"first": settings.maxnames,
-			"page": 1,
-			"q": ""
-		}
-	}
-	$.ajax({
-		url: "https://ptvintern.picarto.tv/ptvapi",
-		type:"POST",
-		data:JSON.stringify(querytosend),
-		contentType:"application/json; charset=utf-8",
-		beforeSend: function (xhr) {
-			xhr.setRequestHeader('authorization', auth_bear);
-		},
-		dataType:"json",
-		success: function(data) {
-			
-			if (!data["data"]) {
-				console.log("ERROR: " + data["errors"][0]["errorDescription"]);
-				return;
+	// Direct access/webpage internal API. Does not work because the list is also wrong.
+	if (false) {
+		let querytosend = {
+			query: 'query ($first: Int!, $page: Int!, $q: String) {\n  followers(\n    first: $first\n    page: $page\n    q: $q\n    orderBy: {field: \n"last_live", order: DESC}\n  ) {\n    account_type\n    avatar\n    channel_name\n    id\n    last_live\n    notification\n    online\n    banned\n    __typename\n  }\n}',
+			variables: {
+				"first": settings.maxnames,
+				"page": 1,
+				"q": ""
 			}
-			
-			var parse = data["data"]["following"];
-			
-			for (i in parse) {
-				if (parse[i]["online"] == false) {
-					delete parse[i];
-					continue;
+		}
+		$.ajax({
+			url: "https://ptvintern.picarto.tv/ptvapi",
+			type:"POST",
+			data:JSON.stringify(querytosend),
+			contentType:"application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('authorization', auth_bear);
+			},
+			dataType:"json",
+			success: function(data) {
+				
+				if (!data["data"]) {
+					console.log("ERROR: " + data["errors"][0]["errorDescription"]);
+					return;
 				}
+				
+				var parse = data["data"]["followers"];
+				
+				for (i in parse) {
+					if (parse[i]["online"] == false) {
+						delete parse[i];
+						continue;
+					}
+				}
+				
+				if (isDevMode()) {
+					/* console.log('Scraping "Connections" page...'); */
+					/* console.log($(data).find('.ant-avatar-image')); */
+					console.log(parse);
+				}
+				
+				exploreData = parse;
+				
+				updateLive(()=>{
+					/* updateAPI(()=>{ */
+						updateBadge(()=>{
+							updateMOTD(); // done!
+						})
+					/* }) */
+				})
+			},
+			error: function(data) {
+				if (isDevMode()) console.log(data); // oh no
 			}
-			
-			if (isDevMode()) {
-				/* console.log('Scraping "Connections" page...'); */
-				/* console.log($(data).find('.ant-avatar-image')); */
-				console.log(parse);
-			}
-			
-			exploreData = parse;
-			
-			updateLive(()=>{
-				/* updateAPI(()=>{ */
-					updateBadge(()=>{
-						updateMOTD(); // done!
-					})
-				/* }) */
-			})
-		},
-		error: function(data) {
-			if (isDevMode()) console.log(data); // oh no
+		});
+	}
+	
+	// Cry, get the user id, then poll the direct API.
+	if (true) {
+		if (ownid == -1) { // is this actually needed???????? GOD I HATE THIS WEBSITE.
+			await $.ajax({
+				url: "https://ptvintern.picarto.tv/ptvapi",
+				type:"POST",
+				data:JSON.stringify({
+					query: '{\n  me {\n    id\n }\n}'
+				}),
+				contentType:"application/json; charset=utf-8",
+				beforeSend: function (xhr) {
+					xhr.setRequestHeader('authorization', auth_bear);
+				},
+				dataType:"json",
+				success: function(data) {
+					
+					// errors? missing fields?
+					if (!data["data"] || !data["data"]["me"] || !data["data"]["me"]["id"]){
+						console.log("ERROR: " + data["errors"][0]["errorDescription"]);
+						return;
+					}
+					
+					ownid = data.data.me.id;
+					/* console.log(my_userid); */
+				},
+				error: function(data) {
+					if (isDevMode()) console.log(data); // oh no
+				}
+			});
 		}
-	});
+		// fetch the actual follows data
+		$.ajax({
+			url: "https://ptvintern.picarto.tv/api/myfollowing/"+ownid+"?first=20&page=1&q=",
+			type:"GET",
+			contentType:"application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader('authorization', auth_bear);
+			},
+			dataType:"json",
+			success: function(following_list) {
+				exploreData = [];
+				for (i in following_list) {
+					let channelData = following_list[i];
+					if (channelData.online)
+						exploreData.push(channelData);
+				}
+				updateLive(()=>{
+					/* updateAPI(()=>{ */
+						updateBadge(()=>{
+							updateMOTD(); // done!
+						})
+					/* }) */
+				})
+			},
+			error: function(data) {
+				if (isDevMode()) console.log(data); // oh no
+			}
+		});
+	}
 }
 
 // get default settings or fetch from storage
@@ -728,7 +790,7 @@ browser.runtime.onMessage.addListener(
 			settings = {};
 			livecount = 0;
 			invitecount = 0;
-			ownname = "";
+			ownid = -1;
 			exploreData = {};
 			notloggedinrecall = false;
 			token = "";
