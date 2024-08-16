@@ -666,7 +666,7 @@ async function fetch_channel_data(auth_bear) {
 		}
 		// fetch the actual follows data
 		$.ajax({
-			url: "https://ptvintern.picarto.tv/api/myfollowing/"+ownid+"?first=20&page=1&q=",
+			url: "https://ptvintern.picarto.tv/api/myfollowing/"+ownid+"?first=500&page=1&q=",
 			type:"GET",
 			contentType:"application/json; charset=utf-8",
 			beforeSend: function (xhr) {
@@ -680,6 +680,7 @@ async function fetch_channel_data(auth_bear) {
 					if (channelData.online)
 						exploreData.push(channelData);
 				}
+				if (isDevMode()) console.log("Received: "+following_list.length+" out of 500 -- "+exploreData.length+" online");
 				updateLive(()=>{
 					/* updateAPI(()=>{ */
 						updateBadge(()=>{
